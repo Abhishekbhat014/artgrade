@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "483606864628",
+    "project_id": "artgrade-882f7",
+    "storage_bucket": "artgrade-882f7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:483606864628:android:3211adf7ed087b28f134a1",
+        "android_client_info": {
+          "package_name": "com.dev.abhishek.artgrade"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFM2HxZyHXvRobjmXGaL8x_ATdshA09yg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
