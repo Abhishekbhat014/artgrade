@@ -27,7 +27,7 @@ class StudentProfileScreen extends StatelessWidget {
           "My Profile",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
         actions: [
@@ -46,7 +46,7 @@ class StudentProfileScreen extends StatelessWidget {
                 }
 
                 _openEditSheet(context, uid, snap.data()!);
-              } catch (e) {
+              } catch (_) {
                 if (context.mounted) {
                   AppSnackBar.show(
                     context,
@@ -59,11 +59,11 @@ class StudentProfileScreen extends StatelessWidget {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cs.surface,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: cs.shadow.withOpacity(0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -89,52 +89,68 @@ class StudentProfileScreen extends StatelessWidget {
             return Center(child: CircularProgressIndicator(color: cs.primary));
           }
 
-          if (snapshot.hasError ||
-              !snapshot.hasData ||
-              !snapshot.data!.exists) {
-            return const Center(child: Text("Unable to load profile"));
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return Center(
+              child: Text(
+                "Unable to load profile",
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            );
           }
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
 
           final firstName = data['firstName'] ?? 'Student';
+          final middleName = data['middleName'] ?? ''; // ✅ Get Middle Name
           final lastName = data['lastName'] ?? '';
           final email = data['email'] ?? '';
           final phone = data['phone'] ?? 'Not set';
           final gender = data['gender'] ?? 'Not set';
+          final dob = (data['dob'] as Timestamp?)?.toDate();
           final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+
+          // ✅ Logic to display name correctly (avoids double spaces)
+          final fullName = [
+            firstName,
+            middleName,
+            lastName,
+          ].where((s) => s.toString().trim().isNotEmpty).join(' ');
+
+          String formatDate(DateTime d) =>
+              "${d.day.toString().padLeft(2, '0')}/"
+              "${d.month.toString().padLeft(2, '0')}/${d.year}";
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
                 const SizedBox(height: 10),
-
-                // Avatar
                 _Avatar(colorScheme: cs),
-
                 const SizedBox(height: 16),
+
+                // Display Full Name
                 Text(
-                  "$firstName $lastName",
-                  style: const TextStyle(
-                    fontSize: 22,
+                  fullName,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D3142),
+                    color: cs.onSurface,
                   ),
                 ),
                 const SizedBox(height: 6),
                 _RoleBadge(colorScheme: cs),
-
                 const SizedBox(height: 32),
 
-                // Info Card
+                // INFO CARD
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cs.surface,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: cs.shadow.withOpacity(0.08),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -157,19 +173,26 @@ class StudentProfileScreen extends StatelessWidget {
                         label: "Gender",
                         value: gender,
                       ),
-                      if (createdAt != null)
+                      if (dob != null)
                         _ProfileRow(
                           icon: HugeIcons.strokeRoundedCalendar01,
+                          label: "Date of Birth",
+                          value: formatDate(dob),
+                        ),
+                      if (createdAt != null)
+                        _ProfileRow(
+                          icon: HugeIcons.strokeRoundedMortarboard01,
                           label: "Joined",
-                          value:
-                              "${createdAt.day}/${createdAt.month}/${createdAt.year}",
+                          value: formatDate(createdAt),
                           isLast: true,
                         ),
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 16),
 
+                // ABOUT US BUTTON
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -181,14 +204,6 @@ class StudentProfileScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: BorderSide(color: cs.primary.withOpacity(0.5)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      foregroundColor: cs.primary,
-                    ),
                     icon: const HugeIcon(
                       icon: HugeIcons.strokeRoundedInformationCircle,
                       size: 20,
@@ -199,23 +214,17 @@ class StudentProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 32),
 
-                // Sign Out Button
+                // SIGN OUT BUTTON
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () => _confirmLogout(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: BorderSide(
-                        color: Colors.redAccent.withOpacity(0.5),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      foregroundColor: Colors.redAccent,
-                    ),
                     icon: const Icon(Icons.logout_rounded, size: 20),
                     label: const Text("Sign Out"),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: cs.error,
+                      side: BorderSide(color: cs.error.withOpacity(0.6)),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -241,29 +250,21 @@ class StudentProfileScreen extends StatelessWidget {
   }
 
   Future<void> _confirmLogout(BuildContext context) async {
+    final cs = Theme.of(context).colorScheme;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          "Sign Out",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Sign Out"),
         content: const Text("Are you sure you want to sign out?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+            child: const Text("Cancel"),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
+            style: FilledButton.styleFrom(backgroundColor: cs.error),
             child: const Text("Sign Out"),
           ),
         ],
@@ -283,9 +284,9 @@ class StudentProfileScreen extends StatelessWidget {
   }
 }
 
-/* =======================================================
-   EDIT PROFILE SHEET
-======================================================= */
+// =======================================================
+// EDIT PROFILE SHEET
+// =======================================================
 
 class _EditProfileSheet extends StatefulWidget {
   final String userId;
@@ -299,24 +300,73 @@ class _EditProfileSheet extends StatefulWidget {
 
 class _EditProfileSheetState extends State<_EditProfileSheet> {
   late final TextEditingController firstNameCtrl;
+  late final TextEditingController middleNameCtrl; // ✅ Added
   late final TextEditingController lastNameCtrl;
   late final TextEditingController phoneCtrl;
-  late String gender;
+  late final TextEditingController dobCtrl;
 
+  late String gender;
+  DateTime? dob;
   bool loading = false;
 
   @override
   void initState() {
     super.initState();
+
     firstNameCtrl = TextEditingController(text: widget.data['firstName'] ?? '');
+    // ✅ Init Middle Name
+    middleNameCtrl = TextEditingController(
+      text: widget.data['middleName'] ?? '',
+    );
     lastNameCtrl = TextEditingController(text: widget.data['lastName'] ?? '');
     phoneCtrl = TextEditingController(text: widget.data['phone'] ?? '');
     gender = widget.data['gender'] ?? 'Male';
+
+    final ts = widget.data['dob'];
+    if (ts is Timestamp) {
+      dob = ts.toDate();
+    }
+    dobCtrl = TextEditingController(text: dob != null ? _formatDob(dob!) : '');
   }
 
-  Future<void> _save() async {
-    if (firstNameCtrl.text.trim().isEmpty) {
-      AppSnackBar.show(context, "First name is required", isError: true);
+  String _formatDob(DateTime d) =>
+      "${d.day.toString().padLeft(2, '0')}/"
+      "${d.month.toString().padLeft(2, '0')}/"
+      "${d.year}";
+
+  Future<void> _pickDob() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: dob ?? DateTime(now.year - 15),
+      firstDate: DateTime(1950),
+      lastDate: now,
+      helpText: "Select Date of Birth",
+    );
+
+    if (picked != null) {
+      setState(() {
+        dob = picked;
+        dobCtrl.text = _formatDob(picked);
+      });
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (loading) return;
+
+    final firstName = firstNameCtrl.text.trim();
+    final middleName = middleNameCtrl.text.trim(); // ✅ Capture Middle
+    final lastName = lastNameCtrl.text.trim();
+    final phone = phoneCtrl.text.trim();
+
+    if (firstName.length < 2) {
+      AppSnackBar.show(context, "Invalid first name", isError: true);
+      return;
+    }
+
+    if (dob != null && dob!.isAfter(DateTime.now())) {
+      AppSnackBar.show(context, "Invalid date of birth", isError: true);
       return;
     }
 
@@ -327,19 +377,21 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           .collection('users')
           .doc(widget.userId)
           .update({
-            'firstName': firstNameCtrl.text.trim(),
-            'lastName': lastNameCtrl.text.trim(),
-            'phone': phoneCtrl.text.trim(),
-            'gender': gender,
-            'updatedAt': Timestamp.now(),
+            "firstName": firstName,
+            "middleName": middleName, // ✅ Save Middle Name
+            "lastName": lastName,
+            "phone": phone,
+            "gender": gender,
+            if (dob != null) "dob": Timestamp.fromDate(dob!),
+            "updatedAt": Timestamp.now(),
           });
 
       if (!mounted) return;
       Navigator.pop(context);
       AppSnackBar.show(context, "Profile updated successfully");
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
-      AppSnackBar.show(context, "Failed to update profile: $e", isError: true);
+      AppSnackBar.show(context, "Failed to update profile", isError: true);
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -353,23 +405,14 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     InputDecoration decor(String label, dynamic icon) => InputDecoration(
       labelText: label,
       filled: true,
-      fillColor: const Color(0xFFF8F9FC),
+      fillColor: cs.surfaceVariant,
       prefixIcon: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: HugeIcon(icon: icon, size: 20, color: Colors.grey.shade500),
+        child: HugeIcon(icon: icon, size: 20, color: cs.onSurfaceVariant),
       ),
-      prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 44),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade200),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: cs.primary, width: 1.5),
       ),
     );
 
@@ -380,43 +423,50 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
         24,
         MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Edit Profile",
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF2D3142),
-                ),
-              ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close, color: Colors.grey),
-              ),
-            ],
+          Text(
+            "Edit Profile",
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: cs.onSurface,
+            ),
           ),
           const SizedBox(height: 24),
 
+          // First Name
           TextField(
             controller: firstNameCtrl,
             textCapitalization: TextCapitalization.words,
             decoration: decor("First Name", HugeIcons.strokeRoundedUser),
           ),
           const SizedBox(height: 16),
+
+          // ✅ Middle Name Field
+          TextField(
+            controller: middleNameCtrl,
+            textCapitalization: TextCapitalization.words,
+            decoration: decor(
+              "Middle Name (Optional)",
+              HugeIcons.strokeRoundedUser,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Last Name
           TextField(
             controller: lastNameCtrl,
             textCapitalization: TextCapitalization.words,
             decoration: decor("Last Name", HugeIcons.strokeRoundedUser),
           ),
           const SizedBox(height: 16),
+
+          // Phone
           TextField(
             controller: phoneCtrl,
             keyboardType: TextInputType.phone,
@@ -424,6 +474,43 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           ),
           const SizedBox(height: 16),
 
+          // Date of Birth
+          GestureDetector(
+            onTap: _pickDob,
+            child: AbsorbPointer(
+              child: TextField(
+                controller: dobCtrl,
+                decoration:
+                    decor(
+                      "Date of Birth",
+                      HugeIcons.strokeRoundedCalendar01,
+                    ).copyWith(
+                      hintText: "Select Date of Birth",
+                      suffixIcon: Center(
+                        widthFactor: 1.0,
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: Center(
+                            child: HugeIcon(
+                              icon: HugeIcons.strokeRoundedCalendar03,
+                              size: 20,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ),
+                      suffixIconConstraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                    ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Gender
           DropdownButtonFormField<String>(
             value: gender,
             decoration: decor("Gender", HugeIcons.strokeRoundedUserMultiple),
@@ -437,28 +524,16 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 
           const SizedBox(height: 32),
 
+          // Save Button
           FilledButton(
-            onPressed: loading ? null : _save,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              minimumSize: const Size(double.infinity, 50),
-            ),
+            onPressed: loading ? null : _saveProfile,
             child: loading
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Colors.white,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text(
-                    "Save Changes",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                : const Text("Save Changes"),
           ),
         ],
       ),
@@ -466,9 +541,9 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   }
 }
 
-/* =======================================================
-   UI HELPERS
-======================================================= */
+// =======================================================
+// UI HELPERS (THEME SAFE)
+// =======================================================
 
 class _Avatar extends StatelessWidget {
   final ColorScheme colorScheme;
@@ -492,13 +567,12 @@ class _Avatar extends StatelessWidget {
           width: 100,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white,
-            border: Border.all(color: Colors.white, width: 4),
+            color: Theme.of(context).colorScheme.surface,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: colorScheme.shadow.withOpacity(0.1),
                 blurRadius: 10,
-                offset: const Offset(0, 5),
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -565,6 +639,8 @@ class _ProfileRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         Padding(
@@ -575,14 +651,14 @@ class _ProfileRow extends StatelessWidget {
                 height: 40,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: cs.surfaceVariant,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
                   child: HugeIcon(
                     icon: icon,
                     size: 20,
-                    color: Colors.grey.shade600,
+                    color: cs.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -593,19 +669,16 @@ class _ProfileRow extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                        fontWeight: FontWeight.w500,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       value,
-                      style: const TextStyle(
-                        fontSize: 15,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2D3142),
+                        color: cs.onSurface,
                       ),
                     ),
                   ],
@@ -614,8 +687,7 @@ class _ProfileRow extends StatelessWidget {
             ],
           ),
         ),
-        if (!isLast)
-          Divider(height: 1, thickness: 1, color: Colors.grey.shade100),
+        if (!isLast) Divider(height: 1, thickness: 1, color: cs.outlineVariant),
       ],
     );
   }

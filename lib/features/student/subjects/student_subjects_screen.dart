@@ -20,7 +20,6 @@ class SubjectsScreen extends StatefulWidget {
 }
 
 class _SubjectsScreenState extends State<SubjectsScreen> {
-  /// All completed material IDs for this course
   List<String> completedMaterials = [];
 
   @override
@@ -53,36 +52,36 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC), // Consistent background
+      backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const HugeIcon(
+          icon: HugeIcon(
             icon: HugeIcons.strokeRoundedArrowLeft01,
             size: 20,
+            color: cs.onSurface,
           ),
-          color: Colors.black87,
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Subjects",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
       ),
+
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ------------------------------------------
-          // 1. COURSE HEADER
-          // ------------------------------------------
+          // ================= COURSE HEADER =================
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 10, 24, 20),
             child: Column(
@@ -90,29 +89,23 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
               children: [
                 Text(
                   widget.courseTitle,
-                  style: const TextStyle(
-                    fontSize: 24,
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF2D3142),
-                    letterSpacing: -0.5,
+                    color: cs.onSurface,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   "Select a subject to start learning",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade500,
-                    fontWeight: FontWeight.w500,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
           ),
 
-          // ------------------------------------------
-          // 2. SUBJECT LIST
-          // ------------------------------------------
+          // ================= SUBJECT LIST =================
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -124,20 +117,18 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
-                    child: CircularProgressIndicator(
-                      color: colorScheme.primary,
-                    ),
+                    child: CircularProgressIndicator(color: cs.primary),
                   );
                 }
 
                 if (snapshot.hasError) {
-                  return _buildErrorState(theme);
+                  return _ErrorState();
                 }
 
-                final subjects = snapshot.data!.docs;
+                final subjects = snapshot.data?.docs ?? [];
 
                 if (subjects.isEmpty) {
-                  return _buildEmptyState(theme);
+                  return _EmptyState();
                 }
 
                 return ListView.separated(
@@ -171,9 +162,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                           minPersons: subjectData['minPersons'],
                           completedSteps: completedForSubject,
                           totalSteps: totalMaterials,
-                          colorScheme: colorScheme,
                           onTap: () async {
-                            // Wait for navigation so we reload progress when returning
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -184,7 +173,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                                 ),
                               ),
                             );
-                            _loadUserProgress(); // Refresh progress
+                            _loadUserProgress();
                           },
                         );
                       },
@@ -198,47 +187,17 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
       ),
     );
   }
-
-  Widget _buildEmptyState(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const HugeIcon(
-            icon: HugeIcons.strokeRoundedFolder02,
-            size: 64,
-            color: Colors.grey,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            "No subjects found",
-            style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(ThemeData theme) {
-    return Center(
-      child: Text(
-        "Failed to load subjects",
-        style: theme.textTheme.bodyLarge?.copyWith(color: Colors.redAccent),
-      ),
-    );
-  }
 }
 
-// ------------------------------------------------------
-// SUBJECT CARD
-// ------------------------------------------------------
+// ==================================================
+// SUBJECT CARD (THEME SAFE)
+// ==================================================
 class _SubjectCard extends StatelessWidget {
   final String title;
   final String? subtitle;
   final int? minPersons;
   final int completedSteps;
   final int totalSteps;
-  final ColorScheme colorScheme;
   final VoidCallback onTap;
 
   const _SubjectCard({
@@ -247,36 +206,36 @@ class _SubjectCard extends StatelessWidget {
     this.minPersons,
     required this.completedSteps,
     required this.totalSteps,
-    required this.colorScheme,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     final bool isCompleted = totalSteps > 0 && completedSteps == totalSteps;
     final bool isStarted = completedSteps > 0;
     final double progress = totalSteps > 0 ? completedSteps / totalSteps : 0;
 
-    // Define colors based on state
-    final Color iconColor = isCompleted
-        ? const Color(0xFF00C853) // Green
+    final Color stateColor = isCompleted
+        ? Colors.green
         : isStarted
-        ? colorScheme.primary
-        : Colors.grey.shade400;
+        ? cs.primary
+        : cs.onSurfaceVariant;
 
     final Color bgColor = isCompleted
-        ? const Color(0xFFE8F5E9) // Light Green
+        ? Colors.green.withOpacity(0.12)
         : isStarted
-        ? colorScheme.primary.withOpacity(0.1)
-        : Colors.grey.shade100;
+        ? cs.primary.withOpacity(0.12)
+        : cs.surfaceVariant;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: cs.shadow.withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -292,7 +251,7 @@ class _SubjectCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Header Row
+                // HEADER
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -309,40 +268,38 @@ class _SubjectCard extends StatelessWidget {
                               ? HugeIcons.strokeRoundedCheckmarkCircle02
                               : HugeIcons.strokeRoundedBookOpen01,
                           size: 24,
-                          color: iconColor,
+                          color: stateColor,
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
+
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2D3142),
-                            ),
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: cs.onSurface,
+                                ),
                           ),
                           if (subtitle != null && subtitle!.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text(
                               subtitle!,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey.shade500,
-                                fontWeight: FontWeight.w500,
-                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: cs.onSurfaceVariant),
                             ),
                           ],
                         ],
                       ),
                     ),
-                    // Min Persons Badge
+
                     if (minPersons != null)
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -350,24 +307,24 @@ class _SubjectCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
+                          color: cs.tertiary.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            const HugeIcon(
+                            HugeIcon(
                               icon: HugeIcons.strokeRoundedUserGroup,
                               size: 14,
-                              color: Colors.orange,
+                              color: cs.tertiary,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               "$minPersons+",
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.orange,
-                              ),
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: cs.tertiary,
+                                  ),
                             ),
                           ],
                         ),
@@ -376,10 +333,10 @@ class _SubjectCard extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 16),
-                const Divider(height: 1, color: Color(0xFFEEEFF3)),
+                Divider(color: cs.outlineVariant),
                 const SizedBox(height: 12),
 
-                // 2. Progress Footer
+                // FOOTER
                 if (totalSteps > 0) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -390,23 +347,19 @@ class _SubjectCard extends StatelessWidget {
                             : isStarted
                             ? "In Progress"
                             : "Not Started",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isCompleted
-                              ? Colors.green
-                              : Colors.grey.shade600,
-                        ),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: stateColor,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                       Text(
                         "${(progress * 100).toInt()}%",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: isCompleted
-                              ? Colors.green
-                              : colorScheme.primary,
-                        ),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: stateColor,
+                            ),
                       ),
                     ],
                   ),
@@ -416,29 +369,23 @@ class _SubjectCard extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: 6,
-                      backgroundColor: Colors.grey.shade100,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        isCompleted ? Colors.green : colorScheme.primary,
-                      ),
+                      backgroundColor: cs.surfaceVariant,
+                      valueColor: AlwaysStoppedAnimation(stateColor),
                     ),
                   ),
                 ] else
-                  // If no materials
                   Row(
                     children: [
                       HugeIcon(
                         icon: HugeIcons.strokeRoundedInformationCircle,
                         size: 14,
-                        color: Colors.grey.shade400,
+                        color: cs.onSurfaceVariant,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         "Coming Soon",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade400,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(color: cs.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -446,6 +393,51 @@ class _SubjectCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ==================================================
+// EMPTY & ERROR STATES
+// ==================================================
+
+class _EmptyState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedFolder02,
+            size: 64,
+            color: cs.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "No subjects found",
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Text(
+        "Failed to load subjects",
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: cs.error),
       ),
     );
   }

@@ -15,7 +15,7 @@ class AddSubjectScreen extends StatefulWidget {
 }
 
 // --------------------------------------------------
-// Dynamic Field Model (same pattern everywhere)
+// Dynamic Field Model
 // --------------------------------------------------
 class _ExtraField {
   final TextEditingController keyCtrl = TextEditingController();
@@ -29,7 +29,6 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
   final minPersonsCtrl = TextEditingController();
 
   final List<_ExtraField> _extraFields = [];
-
   bool loading = false;
 
   @override
@@ -38,16 +37,14 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
     subtitleCtrl.dispose();
     orderCtrl.dispose();
     minPersonsCtrl.dispose();
-    for (final field in _extraFields) {
-      field.keyCtrl.dispose();
-      field.valueCtrl.dispose();
+    for (final f in _extraFields) {
+      f.keyCtrl.dispose();
+      f.valueCtrl.dispose();
     }
     super.dispose();
   }
 
-  void _addExtraField() {
-    setState(() => _extraFields.add(_ExtraField()));
-  }
+  void _addExtraField() => setState(() => _extraFields.add(_ExtraField()));
 
   void _removeExtraField(int index) {
     _extraFields[index].keyCtrl.dispose();
@@ -77,27 +74,23 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
       return;
     }
 
-    // Build additionalDetails map
     final Map<String, dynamic> additionalDetails = {};
     final Set<String> usedKeys = {};
 
-    for (final field in _extraFields) {
-      final key = field.keyCtrl.text.trim();
-      final value = field.valueCtrl.text.trim();
+    for (final f in _extraFields) {
+      final k = f.keyCtrl.text.trim();
+      final v = f.valueCtrl.text.trim();
+      if (k.isEmpty || v.isEmpty) continue;
 
-      if (key.isEmpty || value.isEmpty) continue;
-
-      if (usedKeys.contains(key.toLowerCase())) {
+      if (!usedKeys.add(k.toLowerCase())) {
         AppSnackBar.show(
           context,
-          "Duplicate field '$key' is not allowed",
+          "Duplicate field '$k' is not allowed",
           isError: true,
         );
         return;
       }
-
-      usedKeys.add(key.toLowerCase());
-      additionalDetails[key] = value;
+      additionalDetails[k] = v;
     }
 
     setState(() => loading = true);
@@ -136,12 +129,13 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    InputDecoration inputDecor(String label, dynamic icon, {String? hint}) {
+    InputDecoration decor(String label, dynamic icon, {String? hint}) {
       return InputDecoration(
         labelText: label,
         hintText: hint,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: cs.surface,
+        labelStyle: TextStyle(color: cs.onSurfaceVariant),
         prefixIcon: icon == null
             ? null
             : Padding(
@@ -149,20 +143,16 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
                 child: HugeIcon(
                   icon: icon,
                   size: 20,
-                  color: Colors.grey.shade500,
+                  color: cs.onSurfaceVariant,
                 ),
               ),
-        prefixIconConstraints: const BoxConstraints(
-          minWidth: 44,
-          minHeight: 44,
-        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(color: cs.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -182,17 +172,14 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedArrowLeft01,
-            size: 20,
-          ),
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Add Subject",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
       ),
@@ -206,7 +193,7 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
               children: [
                 TextField(
                   controller: titleCtrl,
-                  decoration: inputDecor(
+                  decoration: decor(
                     "Subject Title",
                     HugeIcons.strokeRoundedHeading02,
                   ),
@@ -215,17 +202,14 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
 
                 TextField(
                   controller: subtitleCtrl,
-                  decoration: inputDecor(
-                    "Subtitle",
-                    HugeIcons.strokeRoundedNote01,
-                  ),
+                  decoration: decor("Subtitle", HugeIcons.strokeRoundedNote01),
                 ),
                 const SizedBox(height: 16),
 
                 TextField(
                   controller: orderCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: inputDecor(
+                  decoration: decor(
                     "Display Order",
                     HugeIcons.strokeRoundedSorting05,
                   ),
@@ -235,15 +219,13 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
                 TextField(
                   controller: minPersonsCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: inputDecor(
+                  decoration: decor(
                     "Min Persons (Optional)",
                     HugeIcons.strokeRoundedUserGroup,
                   ),
                 ),
-
                 const SizedBox(height: 32),
 
-                // ---------------- Dynamic Fields ----------------
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -251,7 +233,7 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
                       "Additional Details",
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade700,
+                        color: cs.onSurface,
                       ),
                     ),
                     TextButton.icon(
@@ -267,18 +249,19 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: cs.surfaceVariant,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
+                    child: Text(
                       "No extra fields added yet",
                       textAlign: TextAlign.center,
+                      style: TextStyle(color: cs.onSurfaceVariant),
                     ),
                   ),
 
-                ..._extraFields.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final field = entry.value;
+                ..._extraFields.asMap().entries.map((e) {
+                  final i = e.key;
+                  final f = e.value;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Row(
@@ -286,16 +269,16 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
                         Expanded(
                           flex: 2,
                           child: TextField(
-                            controller: field.keyCtrl,
-                            decoration: inputDecor("Label", null),
+                            controller: f.keyCtrl,
+                            decoration: decor("Label", null),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           flex: 3,
                           child: TextField(
-                            controller: field.valueCtrl,
-                            decoration: inputDecor("Value", null),
+                            controller: f.valueCtrl,
+                            decoration: decor("Value", null),
                           ),
                         ),
                         IconButton(
@@ -303,7 +286,7 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
                             icon: HugeIcons.strokeRoundedRemoveCircle,
                             color: Colors.redAccent,
                           ),
-                          onPressed: () => _removeExtraField(index),
+                          onPressed: () => _removeExtraField(i),
                         ),
                       ],
                     ),

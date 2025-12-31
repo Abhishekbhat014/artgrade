@@ -19,8 +19,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final lastNameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
+  final confirmPassCtrl = TextEditingController();
+
+  bool _hidePassword = true;
+  bool _hideConfirmPassword = true;
+
+  DateTime? dob;
+  String? gender;
 
   bool loading = false;
+  Future<void> pickDob() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2005),
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      setState(() => dob = picked);
+    }
+  }
 
   // ------------------
   // Registration logic
@@ -65,6 +84,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
+    if (password != confirmPassCtrl.text) {
+      AppSnackBar.show(context, "Passwords do not match", isError: true);
+      return;
+    }
+
+    if (dob == null) {
+      AppSnackBar.show(context, "Please select date of birth", isError: true);
+      return;
+    }
+
+    if (gender == null) {
+      AppSnackBar.show(context, "Please select gender", isError: true);
+      return;
+    }
 
     setState(() => loading = true);
 
@@ -91,6 +124,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             "lastName": lastName,
             "email": email,
             "role": "student",
+            "dob": Timestamp.fromDate(dob!),
+            "gender": gender,
+
             "active": true,
             "createdAt": Timestamp.now(),
           });
@@ -147,6 +183,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     lastNameCtrl.dispose();
     emailCtrl.dispose();
     passCtrl.dispose();
+    confirmPassCtrl.dispose();
     super.dispose();
   }
 
@@ -177,7 +214,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         leading: IconButton(
           icon: HugeIcon(
             icon: HugeIcons.strokeRoundedArrowLeft01,
-            color: Colors.black,
+            color: colorScheme.onSurface,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -240,6 +277,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: gender,
+                  decoration: inputDecor(
+                    "Gender",
+                    HugeIcons.strokeRoundedUserCircle,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: "male", child: Text("Male")),
+                    DropdownMenuItem(value: "female", child: Text("Female")),
+                    DropdownMenuItem(value: "other", child: Text("Other")),
+                  ],
+                  onChanged: (value) {
+                    setState(() => gender = value);
+                  },
+                  icon: HugeIcon(
+                    icon: HugeIcons.strokeRoundedArrowDown01,
+                    size: 18,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 16),
 
                 TextField(
                   controller: emailCtrl,
@@ -254,13 +312,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 TextField(
                   controller: passCtrl,
-                  obscureText: true,
+                  obscureText: _hidePassword,
+                  textInputAction: TextInputAction.next,
+                  decoration:
+                      inputDecor(
+                        "Password",
+                        HugeIcons.strokeRoundedLockPassword,
+                      ).copyWith(
+                        suffixIcon: IconButton(
+                          icon: HugeIcon(
+                            icon: _hidePassword
+                                ? HugeIcons.strokeRoundedViewOff
+                                : HugeIcons.strokeRoundedView,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() => _hidePassword = !_hidePassword);
+                          },
+                        ),
+                      ),
+                ),
+
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmPassCtrl,
+                  obscureText: _hideConfirmPassword,
                   textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => register(),
-                  decoration: inputDecor(
-                    "Password",
-                    HugeIcons.strokeRoundedLockPassword,
-                  ),
+                  decoration:
+                      inputDecor(
+                        "Re-enter Password",
+                        HugeIcons.strokeRoundedLockPassword,
+                      ).copyWith(
+                        suffixIcon: IconButton(
+                          icon: HugeIcon(
+                            icon: _hideConfirmPassword
+                                ? HugeIcons.strokeRoundedViewOff
+                                : HugeIcons.strokeRoundedView,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(
+                              () =>
+                                  _hideConfirmPassword = !_hideConfirmPassword,
+                            );
+                          },
+                        ),
+                      ),
                 ),
                 const SizedBox(height: 32),
 

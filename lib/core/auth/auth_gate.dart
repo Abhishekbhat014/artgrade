@@ -12,6 +12,9 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -33,31 +36,26 @@ class AuthGate extends StatelessWidget {
               .doc(uid)
               .snapshots(),
           builder: (context, userSnap) {
-            // 1️⃣ Waiting for Firestore stream
             if (userSnap.connectionState == ConnectionState.waiting) {
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
               );
             }
 
-            // 2️⃣ Firestore not ready yet (VERY common just after login)
             if (!userSnap.hasData || !userSnap.data!.exists) {
               return const Scaffold(
                 body: Center(child: Text("Setting up your account…")),
               );
             }
 
-            // 3️⃣ Safe to read data
             final data = userSnap.data!.data() as Map<String, dynamic>;
             final role = data['role'] ?? 'student';
             final active = data['active'] ?? true;
 
-            // 4️⃣ Disabled account
             if (!active) {
               return const _DisabledAccountScreen();
             }
 
-            // 5️⃣ Route by role
             return role == 'admin' ? const AdminShell() : const StudentShell();
           },
         );
@@ -66,16 +64,21 @@ class AuthGate extends StatelessWidget {
   }
 }
 
+// =======================================================
+// DISABLED ACCOUNT SCREEN (THEME SAFE)
+// =======================================================
+
 class _DisabledAccountScreen extends StatelessWidget {
   const _DisabledAccountScreen();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
+      backgroundColor: theme.scaffoldBackgroundColor,
+
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -84,11 +87,11 @@ class _DisabledAccountScreen extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cs.surface,
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: cs.shadow.withOpacity(0.08),
                     blurRadius: 24,
                     offset: const Offset(0, 10),
                   ),
@@ -97,55 +100,47 @@ class _DisabledAccountScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ----------------------------------
                   // ICON
-                  // ----------------------------------
                   Container(
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.12),
+                      color: cs.tertiary.withOpacity(0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const HugeIcon(
+                    child: HugeIcon(
                       icon: HugeIcons.strokeRoundedUserBlock01,
                       size: 48,
-                      color: Colors.orange,
+                      color: cs.tertiary,
                     ),
                   ),
 
                   const SizedBox(height: 28),
 
-                  // ----------------------------------
                   // TITLE
-                  // ----------------------------------
                   Text(
                     "Account Disabled",
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF2D3142),
+                      color: cs.onSurface,
                     ),
                   ),
 
                   const SizedBox(height: 12),
 
-                  // ----------------------------------
                   // MESSAGE
-                  // ----------------------------------
                   Text(
                     "Your ArtGrade account has been temporarily disabled by the administrator.\n\nIf you believe this is a mistake, please contact support for assistance.",
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       height: 1.6,
-                      color: Colors.grey.shade600,
+                      color: cs.onSurfaceVariant,
                     ),
                   ),
 
                   const SizedBox(height: 32),
 
-                  // ----------------------------------
                   // ACTION BUTTON
-                  // ----------------------------------
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
@@ -153,7 +148,7 @@ class _DisabledAccountScreen extends StatelessWidget {
                         await FirebaseAuth.instance.signOut();
                       },
                       style: FilledButton.styleFrom(
-                        backgroundColor: colorScheme.primary,
+                        backgroundColor: cs.primary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
@@ -172,14 +167,11 @@ class _DisabledAccountScreen extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // ----------------------------------
-                  // FOOTER (OPTIONAL)
-                  // ----------------------------------
+                  // FOOTER
                   Text(
                     "ArtGrade • Learn with confidence",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade400,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: cs.onSurfaceVariant,
                       letterSpacing: 0.5,
                     ),
                   ),

@@ -16,28 +16,38 @@ class AdminHome extends StatelessWidget {
     final prevWeek = now.subtract(const Duration(days: 14));
 
     return Scaffold(
+      // ✅ Use theme background (Dark: Slate, Light: Soft Grey)
       backgroundColor: theme.scaffoldBackgroundColor,
 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Dashboard",
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF2D3142),
+        centerTitle: false,
+        title: Padding(
+          padding: const EdgeInsets.only(left: 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Dashboard",
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 24,
+                  // ✅ Dynamic Text Color
+                  color: cs.onSurface,
+                ),
               ),
-            ),
-            Text(
-              "Real-time overview",
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.grey.shade500,
+              const SizedBox(height: 2),
+              Text(
+                "Real-time overview",
+                style: theme.textTheme.bodySmall?.copyWith(
+                  // ✅ Dynamic Subtitle Color
+                  color: cs.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
 
@@ -87,13 +97,11 @@ class AdminHome extends StatelessWidget {
                   .length;
 
               return SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // =============================
-                    // OVERVIEW
-                    // =============================
+                    // 1. TOP STATS ROW
                     Row(
                       children: [
                         Expanded(
@@ -110,33 +118,33 @@ class AdminHome extends StatelessWidget {
                             label: "Active Courses",
                             value: activeCourses.toString(),
                             icon: HugeIcons.strokeRoundedBookOpen01,
-                            color: Colors.orangeAccent,
+                            color: Colors.orange,
                           ),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
+                    // Trend Indicator
                     _TrendHint(
                       label: "students joined",
                       diff: studentTrend,
                       color: studentTrend >= 0
-                          ? const Color(0xFF00C853)
-                          : const Color(0xFFFF5252),
+                          ? Colors.green
+                          : Colors.redAccent,
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
 
-                    // =============================
-                    // STUDENT ACTIVITY
-                    // =============================
+                    // 2. STUDENT ACTIVITY CHART
                     const _SectionHeader(title: "Student Activity"),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
                     _CardContainer(
                       child: Row(
                         children: [
+                          // Donut Chart
                           SizedBox(
                             height: 120,
                             width: 120,
@@ -146,18 +154,19 @@ class AdminHome extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 24),
+                          // Legend
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _ChartLegend(
-                                  color: const Color(0xFF00C853),
+                                  color: Colors.green,
                                   label: "Active Accounts",
                                   value: activeStudents.toString(),
                                 ),
                                 const SizedBox(height: 12),
                                 _ChartLegend(
-                                  color: const Color(0xFFFF5252),
+                                  color: Colors.redAccent,
                                   label: "Disabled Accounts",
                                   value: disabledStudents.toString(),
                                 ),
@@ -170,40 +179,51 @@ class AdminHome extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
+                    // 3. MINI STATS ROW
                     _CardContainer(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           _MiniStat(
                             label: "New (7d)",
                             value: newThisWeek.toString(),
-                            color: cs.primary,
+                            color: Colors.blueAccent,
+                          ),
+                          Container(
+                            width: 1,
+                            height: 40,
+                            // ✅ Dynamic divider color
+                            color: cs.outlineVariant.withOpacity(0.5),
                           ),
                           _MiniStat(
                             label: "Active Today",
                             value: activeStudents.toString(),
-                            color: const Color(0xFF00C853),
+                            color: Colors.green,
+                          ),
+                          Container(
+                            width: 1,
+                            height: 40,
+                            color: cs.outlineVariant.withOpacity(0.5),
                           ),
                           _MiniStat(
-                            label: "Courses",
+                            label: "Total Courses",
                             value: courses.length.toString(),
-                            color: Colors.orangeAccent,
+                            color: Colors.orange,
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
 
-                    // =============================
-                    // COURSE STATUS
-                    // =============================
+                    // 4. COURSE STATUS BAR CHART
                     const _SectionHeader(title: "Course Status"),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
                     _CardContainer(
-                      height: 250,
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 10),
+                      height: 280,
+                      padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
                       child: _CoursesBarChart(
                         active: activeCourses,
                         inactive: inactiveCourses,
@@ -211,7 +231,7 @@ class AdminHome extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 80),
+                    const SizedBox(height: 40),
                   ],
                 ),
               );
@@ -223,102 +243,9 @@ class AdminHome extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   SMALL ADDITIONS
-========================================================= */
-
-class _TrendHint extends StatelessWidget {
-  final String label;
-  final int diff;
-  final Color color;
-
-  const _TrendHint({
-    required this.label,
-    required this.diff,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (diff == 0) return const SizedBox.shrink();
-
-    final isUp = diff > 0;
-
-    return Row(
-      children: [
-        Icon(
-          isUp ? Icons.trending_up : Icons.trending_down,
-          size: 16,
-          color: color,
-        ),
-        const SizedBox(width: 6),
-        Text(
-          "${isUp ? '+' : ''}$diff $label this week",
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _MiniStat({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade500,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/* =========================================================
-   EXISTING HELPERS (UNCHANGED)
-========================================================= */
-
-// _OverviewCard
-// _SectionHeader
-// _CardContainer
-// _ChartLegend
-// _UsersDonutChart
-// _CoursesBarChart
-
-// ⛔ intentionally not duplicated here to avoid noise
-// ⛔ keep your existing implementations exactly as-is
-
-// ===================================================================
-// SHARED UI HELPERS (NO VISUAL CHANGE)
-// ===================================================================
+/* =======================================================
+   UI HELPERS (THEME SAFE)
+======================================================= */
 
 class _SectionHeader extends StatelessWidget {
   final String title;
@@ -326,12 +253,14 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Dynamic Text Color
+    final cs = Theme.of(context).colorScheme;
     return Text(
       title,
       style: TextStyle(
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF2D3142),
+        color: cs.onSurface,
       ),
     );
   }
@@ -350,15 +279,18 @@ class _CardContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       height: height,
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.white,
+        // ✅ Dynamic Background (Dark Slate / White)
+        color: cs.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            // ✅ Shadow handles dark mode (less visible or subtle)
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -384,25 +316,27 @@ class _OverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return _CardContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: HugeIcon(icon: icon, size: 24, color: color),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF2D3142),
+              // ✅ Dynamic Text Color
+              color: cs.onSurface,
             ),
           ),
           const SizedBox(height: 4),
@@ -410,12 +344,87 @@ class _OverviewCard extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w600,
+              // ✅ Dynamic Muted Text Color
+              color: cs.onSurface.withOpacity(0.6),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _TrendHint extends StatelessWidget {
+  final String label;
+  final int diff;
+  final Color color;
+
+  const _TrendHint({
+    required this.label,
+    required this.diff,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (diff == 0) return const SizedBox.shrink();
+    return Row(
+      children: [
+        Icon(
+          diff > 0 ? Icons.trending_up : Icons.trending_down,
+          size: 18,
+          color: color,
+        ),
+        const SizedBox(width: 6),
+        Text(
+          "${diff > 0 ? '+' : ''}$diff $label this week",
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _MiniStat({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            // ✅ Dynamic Muted Text
+            color: cs.onSurface.withOpacity(0.6),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -433,6 +442,7 @@ class _ChartLegend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
         Container(
@@ -451,16 +461,18 @@ class _ChartLegend extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade500,
-                fontWeight: FontWeight.w500,
+                // ✅ Dynamic Muted Text
+                color: cs.onSurface.withOpacity(0.6),
+                fontWeight: FontWeight.w600,
               ),
             ),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2D3142),
+                // ✅ Dynamic Text
+                color: cs.onSurface,
               ),
             ),
           ],
@@ -470,9 +482,9 @@ class _ChartLegend extends StatelessWidget {
   }
 }
 
-// ===================================================================
-// CHARTS (UNCHANGED VISUALLY)
-// ===================================================================
+/* =======================================================
+   CHARTS
+======================================================= */
 
 class _UsersDonutChart extends StatelessWidget {
   final int active;
@@ -483,6 +495,7 @@ class _UsersDonutChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = active + disabled;
+    final cs = Theme.of(context).colorScheme;
 
     if (total == 0) {
       return PieChart(
@@ -490,9 +503,10 @@ class _UsersDonutChart extends StatelessWidget {
           centerSpaceRadius: 40,
           sections: [
             PieChartSectionData(
-              color: Colors.grey.shade200,
+              // ✅ Dynamic Chart Empty Color
+              color: cs.outlineVariant.withOpacity(0.3),
               value: 1,
-              radius: 20,
+              radius: 15,
               showTitle: false,
             ),
           ],
@@ -507,17 +521,18 @@ class _UsersDonutChart extends StatelessWidget {
           PieChartData(
             startDegreeOffset: -90,
             centerSpaceRadius: 40,
+            sectionsSpace: 4,
             sections: [
               PieChartSectionData(
                 value: active.toDouble(),
-                color: const Color(0xFF00C853),
-                radius: 20,
+                color: Colors.green,
+                radius: 15,
                 showTitle: false,
               ),
               PieChartSectionData(
                 value: disabled.toDouble(),
-                color: const Color(0xFFFF5252),
-                radius: 18,
+                color: Colors.redAccent,
+                radius: 15,
                 showTitle: false,
               ),
             ],
@@ -528,10 +543,11 @@ class _UsersDonutChart extends StatelessWidget {
           children: [
             Text(
               total.toString(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2D3142),
+                // ✅ Dynamic Text
+                color: cs.onSurface,
               ),
             ),
             Text(
@@ -539,7 +555,7 @@ class _UsersDonutChart extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade500,
+                color: cs.onSurface.withOpacity(0.5),
               ),
             ),
           ],
@@ -562,6 +578,7 @@ class _CoursesBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = theme.colorScheme;
     final maxY = ((active > inactive ? active : inactive) * 1.2).toDouble();
     final safeMaxY = maxY == 0 ? 5.0 : maxY;
 
@@ -577,11 +594,12 @@ class _CoursesBarChart extends StatelessWidget {
                 final text = value.toInt() == 0 ? 'Active' : 'Inactive';
                 return SideTitleWidget(
                   meta: meta,
-                  space: 4,
+                  space: 8,
                   child: Text(
                     text,
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      // ✅ Dynamic Text Color
+                      color: cs.onSurface.withOpacity(0.6),
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -604,8 +622,11 @@ class _CoursesBarChart extends StatelessWidget {
           show: true,
           drawVerticalLine: false,
           horizontalInterval: safeMaxY / 5,
-          getDrawingHorizontalLine: (value) =>
-              FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+          getDrawingHorizontalLine: (value) => FlLine(
+            // ✅ Dynamic Grid Line Color
+            color: cs.outlineVariant.withOpacity(0.2),
+            strokeWidth: 1,
+          ),
         ),
         borderData: FlBorderData(show: false),
         barGroups: [
@@ -614,14 +635,16 @@ class _CoursesBarChart extends StatelessWidget {
             barRods: [
               BarChartRodData(
                 toY: active.toDouble(),
-                width: 40,
-                gradient: const LinearGradient(
-                  colors: [Colors.blueAccent, Colors.lightBlueAccent],
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                ),
+                width: 48,
+                color: Colors.orange,
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(10),
+                  top: Radius.circular(8),
+                ),
+                backDrawRodData: BackgroundBarChartRodData(
+                  show: true,
+                  toY: safeMaxY,
+                  // ✅ Dynamic Bar Background Color
+                  color: cs.outlineVariant.withOpacity(0.1),
                 ),
               ),
             ],
@@ -631,10 +654,15 @@ class _CoursesBarChart extends StatelessWidget {
             barRods: [
               BarChartRodData(
                 toY: inactive.toDouble(),
-                width: 40,
-                color: Colors.grey.shade300,
+                width: 48,
+                color: cs.outline, // Use outline color for inactive bar
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(10),
+                  top: Radius.circular(8),
+                ),
+                backDrawRodData: BackgroundBarChartRodData(
+                  show: true,
+                  toY: safeMaxY,
+                  color: cs.outlineVariant.withOpacity(0.1),
                 ),
               ),
             ],

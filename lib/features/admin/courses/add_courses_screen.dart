@@ -12,7 +12,10 @@ class AddCourseScreen extends StatefulWidget {
   State<AddCourseScreen> createState() => _AddCourseScreenState();
 }
 
-// Helper class for dynamic fields
+/* =======================================================
+   EXTRA FIELD MODEL
+======================================================= */
+
 class _ExtraField {
   final TextEditingController keyCtrl;
   final TextEditingController valueCtrl;
@@ -32,9 +35,10 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
 
   bool loading = false;
 
-  // -----------------------------
-  // Add / Remove dynamic fields
-  // -----------------------------
+  /* =======================================================
+     EXTRA FIELDS HANDLING
+  ======================================================= */
+
   void _addExtraField() {
     setState(() => _extraFields.add(_ExtraField()));
   }
@@ -45,9 +49,10 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
     setState(() => _extraFields.removeAt(index));
   }
 
-  // -----------------------------
-  // Save Course
-  // -----------------------------
+  /* =======================================================
+     SAVE COURSE
+  ======================================================= */
+
   Future<void> _saveCourse() async {
     if (loading) return;
 
@@ -78,7 +83,6 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
       return;
     }
 
-    // Convert extra fields → Map
     final Map<String, dynamic> extrasMap = {};
     for (final field in _extraFields) {
       final key = field.keyCtrl.text.trim();
@@ -118,12 +122,12 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
       if (!mounted) return;
       AppSnackBar.show(context, "Course added successfully");
 
-      await Future.delayed(const Duration(milliseconds: 400));
-      if (!mounted) return;
-      Navigator.pop(context);
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (mounted) Navigator.pop(context);
     } catch (_) {
-      if (!mounted) return;
-      AppSnackBar.show(context, "Failed to save course", isError: true);
+      if (mounted) {
+        AppSnackBar.show(context, "Failed to save course", isError: true);
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -142,24 +146,28 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
     super.dispose();
   }
 
+  /* =======================================================
+     UI
+  ======================================================= */
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     InputDecoration inputDecor(String label, dynamic icon, {String? hint}) {
       return InputDecoration(
         labelText: label,
         hintText: hint,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: cs.surfaceVariant,
         prefixIcon: icon != null
             ? Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: HugeIcon(
                   icon: icon,
                   size: 20,
-                  color: Colors.grey.shade500,
+                  color: cs.onSurfaceVariant,
                 ),
               )
             : null,
@@ -171,13 +179,9 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+          borderSide: BorderSide(color: cs.primary, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 16,
@@ -188,27 +192,32 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
+          icon: HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            color: cs.onSurface,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Add Course",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
+            constraints: const BoxConstraints(maxWidth: 520),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -251,9 +260,6 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
 
                 const SizedBox(height: 32),
 
-                // -----------------------------
-                // Additional Details
-                // -----------------------------
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -261,7 +267,7 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                       "Additional Details",
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade700,
+                        color: cs.onSurface,
                       ),
                     ),
                     TextButton.icon(
@@ -274,19 +280,20 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 8),
 
                 if (_extraFields.isEmpty)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: cs.surfaceVariant,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       "No extra fields added",
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey.shade500),
+                      style: TextStyle(color: cs.onSurfaceVariant),
                     ),
                   ),
 
@@ -323,9 +330,9 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                         ),
                         IconButton(
                           onPressed: () => _removeExtraField(index),
-                          icon: const HugeIcon(
+                          icon: HugeIcon(
                             icon: HugeIcons.strokeRoundedRemoveCircle,
-                            color: Colors.redAccent,
+                            color: cs.error,
                           ),
                         ),
                       ],
@@ -343,7 +350,7 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                           width: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: colorScheme.onPrimary,
+                            color: cs.onPrimary,
                           ),
                         )
                       : const Text("Save Course"),

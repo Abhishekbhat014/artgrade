@@ -27,34 +27,30 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserProgress();
+    _listenUserProgress();
   }
 
   Uri? _safeUri(String url) {
     final trimmed = url.trim();
     if (trimmed.isEmpty) return null;
 
-    // Google Drive view → direct download
     if (trimmed.contains('drive.google.com/file/d/')) {
       final reg = RegExp(r'/d/([^/]+)');
       final match = reg.firstMatch(trimmed);
       if (match != null) {
-        final fileId = match.group(1);
-        return Uri.parse(
-          'https://drive.google.com/uc?export=download&id=$fileId',
-        );
+        final id = match.group(1);
+        return Uri.parse('https://drive.google.com/uc?export=download&id=$id');
       }
     }
 
-    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    if (!trimmed.startsWith('http')) {
       return Uri.parse('https://$trimmed');
     }
 
     return Uri.parse(trimmed);
   }
 
-  /// Real-time listener for progress
-  void _loadUserProgress() {
+  void _listenUserProgress() {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     FirebaseFirestore.instance
@@ -88,9 +84,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
 
-      // Mark completed AFTER successful open
       final uid = FirebaseAuth.instance.currentUser!.uid;
-
       await FirebaseFirestore.instance
           .collection('user_progress')
           .doc(uid)
@@ -125,36 +119,36 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC), // Consistent Background
+      backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const HugeIcon(
+          icon: HugeIcon(
             icon: HugeIcons.strokeRoundedArrowLeft01,
             size: 20,
+            color: cs.onSurface,
           ),
-          color: Colors.black87,
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Materials",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
       ),
+
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ------------------------------------------
-          // 1. HERO HEADER
-          // ------------------------------------------
+          // ================= HEADER =================
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 10, 24, 20),
             child: Column(
@@ -162,29 +156,23 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
               children: [
                 Text(
                   widget.subjectTitle,
-                  style: const TextStyle(
-                    fontSize: 24,
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF2D3142),
-                    letterSpacing: -0.5,
+                    color: cs.onSurface,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   "Access your learning resources below",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade500,
-                    fontWeight: FontWeight.w500,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
           ),
 
-          // ------------------------------------------
-          // 2. MATERIALS LIST
-          // ------------------------------------------
+          // ================= MATERIAL LIST =================
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -198,20 +186,18 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
-                    child: CircularProgressIndicator(
-                      color: colorScheme.primary,
-                    ),
+                    child: CircularProgressIndicator(color: cs.primary),
                   );
                 }
 
                 if (snapshot.hasError) {
-                  return _buildErrorState(theme);
+                  return _ErrorState();
                 }
 
-                final materials = snapshot.data!.docs;
+                final materials = snapshot.data?.docs ?? [];
 
                 if (materials.isEmpty) {
-                  return _buildEmptyState(theme);
+                  return _EmptyState();
                 }
 
                 return ListView.separated(
@@ -245,51 +231,11 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
       ),
     );
   }
-
-  Widget _buildEmptyState(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const HugeIcon(
-            icon: HugeIcons.strokeRoundedFolder02,
-            size: 64,
-            color: Colors.grey,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            "No materials uploaded yet",
-            style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const HugeIcon(
-            icon: HugeIcons.strokeRoundedAlertCircle,
-            size: 48,
-            color: Colors.redAccent,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            "Failed to load materials",
-            style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-// ----------------------------------------
-// CUSTOM MATERIAL CARD
-// ----------------------------------------
+// ==================================================
+// MATERIAL CARD (THEME SAFE)
+// ==================================================
 class _MaterialCard extends StatelessWidget {
   final String title;
   final String type;
@@ -307,41 +253,41 @@ class _MaterialCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Determine Icon & Color
-    dynamic iconData;
-    Color typeColor;
-    String typeLabel;
+    final cs = Theme.of(context).colorScheme;
+
+    dynamic icon;
+    Color accent;
+    String label;
 
     switch (type.toLowerCase()) {
       case 'pdf':
-        iconData = HugeIcons.strokeRoundedPdf02;
-        typeColor = const Color(0xFFFF5252); // Red
-        typeLabel = "PDF Document";
+        icon = HugeIcons.strokeRoundedPdf02;
+        accent = cs.error;
+        label = "PDF Document";
         break;
       case 'video':
-        iconData = HugeIcons.strokeRoundedVideoReplay;
-        typeColor = const Color(0xFF448AFF); // Blue
-        typeLabel = "Video Lecture";
+        icon = HugeIcons.strokeRoundedVideoReplay;
+        accent = cs.primary;
+        label = "Video Lecture";
         break;
       case 'excel':
-      case 'excel sheet':
-        iconData = HugeIcons.strokeRoundedFile01;
-        typeColor = const Color(0xFF2E7D32); // Green
-        typeLabel = "Excel Sheet";
+        icon = HugeIcons.strokeRoundedFile01;
+        accent = cs.tertiary;
+        label = "Excel Sheet";
         break;
       default:
-        iconData = HugeIcons.strokeRoundedLink02;
-        typeColor = const Color(0xFFFFA000); // Amber
-        typeLabel = "External Link";
+        icon = HugeIcons.strokeRoundedLink02;
+        accent = cs.secondary;
+        label = "External Link";
     }
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: cs.shadow.withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -356,42 +302,40 @@ class _MaterialCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // 1. Icon Box
+                // ICON
                 Container(
                   height: 52,
                   width: 52,
                   decoration: BoxDecoration(
-                    color: typeColor.withOpacity(0.1),
+                    color: accent.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
-                    child: HugeIcon(icon: iconData, size: 26, color: typeColor),
+                    child: HugeIcon(icon: icon, size: 26, color: accent),
                   ),
                 ),
+
                 const SizedBox(width: 16),
 
-                // 2. Info Section
+                // INFO
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2D3142),
-                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: cs.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 6),
-
-                      // Status Row
                       Row(
                         children: [
                           if (isCompleted) ...[
-                            const HugeIcon(
+                            HugeIcon(
                               icon: HugeIcons.strokeRoundedCheckmarkCircle01,
                               size: 14,
                               color: Colors.green,
@@ -399,29 +343,26 @@ class _MaterialCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               "Completed",
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green.shade600,
-                              ),
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
                             ),
                             Container(
                               margin: const EdgeInsets.symmetric(horizontal: 8),
                               width: 3,
                               height: 3,
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade300,
+                                color: cs.onSurfaceVariant,
                                 shape: BoxShape.circle,
                               ),
                             ),
                           ],
                           Text(
-                            typeLabel,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade500,
-                            ),
+                            label,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: cs.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -429,37 +370,32 @@ class _MaterialCard extends StatelessWidget {
                   ),
                 ),
 
-                // 3. Actions
+                // ACTIONS
                 const SizedBox(width: 12),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // DOWNLOAD BUTTON (isolated tap)
                     GestureDetector(
-                      behavior: HitTestBehavior.opaque,
                       onTap: onDownload,
+                      behavior: HitTestBehavior.opaque,
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
+                          color: cs.surfaceVariant,
                           shape: BoxShape.circle,
-                          color: Colors.grey.shade50,
-                          border: Border.all(color: Colors.grey.shade100),
                         ),
                         child: HugeIcon(
                           icon: HugeIcons.strokeRoundedDownload01,
                           size: 18,
-                          color: Colors.grey.shade500,
+                          color: cs.onSurfaceVariant,
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 12),
-
-                    // Arrow Indicator
                     HugeIcon(
                       icon: HugeIcons.strokeRoundedArrowRight01,
                       size: 20,
-                      color: Colors.grey.shade300,
+                      color: cs.onSurfaceVariant,
                     ),
                   ],
                 ),
@@ -467,6 +403,63 @@ class _MaterialCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ==================================================
+// EMPTY & ERROR STATES
+// ==================================================
+class _EmptyState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedFolder02,
+            size: 64,
+            color: cs.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "No materials uploaded yet",
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedAlertCircle,
+            size: 48,
+            color: cs.error,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Failed to load materials",
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+          ),
+        ],
       ),
     );
   }

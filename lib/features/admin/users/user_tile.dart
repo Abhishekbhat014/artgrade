@@ -55,14 +55,13 @@ class UserTile extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
 
-        // --------------------------------------------------
-        // TILE TAP → DETAILS
-        // --------------------------------------------------
+        // ---------------- USER DETAILS ----------------
         onTap: () {
           showModalBottomSheet(
             context: context,
+            backgroundColor: cs.surface,
             shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             builder: (_) => _UserDetailsSheet(
               name: "$firstName $lastName",
@@ -74,13 +73,12 @@ class UserTile extends StatelessWidget {
         },
 
         child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cs.surface,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: cs.shadow.withOpacity(0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -90,50 +88,44 @@ class UserTile extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // --------------------------------------------------
-                // AVATAR
-                // --------------------------------------------------
+                // ---------------- AVATAR ----------------
                 Container(
                   height: 52,
                   width: 52,
                   decoration: BoxDecoration(
                     color: active
-                        ? cs.primary.withOpacity(0.1)
-                        : Colors.grey.shade100,
+                        ? cs.primary.withOpacity(0.15)
+                        : cs.surfaceVariant,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: HugeIcon(
                       icon: HugeIcons.strokeRoundedUser,
                       size: 24,
-                      color: active ? cs.primary : Colors.grey,
+                      color: active ? cs.primary : cs.onSurfaceVariant,
                     ),
                   ),
                 ),
 
                 const SizedBox(width: 16),
 
-                // --------------------------------------------------
-                // USER INFO
-                // --------------------------------------------------
+                // ---------------- USER INFO ----------------
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$firstName $lastName",
-                        style: const TextStyle(
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Color(0xFF2D3142),
+                          color: cs.onSurface,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         email,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade500,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
                           fontWeight: FontWeight.w500,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -161,18 +153,16 @@ class UserTile extends StatelessWidget {
                   ),
                 ),
 
-                // --------------------------------------------------
-                // ACTION
-                // --------------------------------------------------
+                // ---------------- ACTION ----------------
                 if (!_isAdmin)
                   Transform.scale(
                     scale: 0.8,
                     child: Switch(
                       value: active,
-                      activeColor: Colors.white,
+                      activeColor: cs.onPrimary,
                       activeTrackColor: Colors.green,
-                      inactiveThumbColor: Colors.white,
-                      inactiveTrackColor: Colors.red.shade200,
+                      inactiveThumbColor: cs.onPrimary,
+                      inactiveTrackColor: Colors.red.shade300,
                       trackOutlineColor: WidgetStateProperty.all(
                         Colors.transparent,
                       ),
@@ -187,7 +177,7 @@ class UserTile extends StatelessWidget {
                       child: HugeIcon(
                         icon: HugeIcons.strokeRoundedSecurityCheck,
                         size: 24,
-                        color: Colors.purple.withOpacity(0.5),
+                        color: Colors.purple.withOpacity(0.6),
                       ),
                     ),
                   ),
@@ -211,9 +201,9 @@ class UserTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.15)),
+        border: Border.all(color: color.withOpacity(0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -246,7 +236,7 @@ class UserTile extends StatelessWidget {
 }
 
 // --------------------------------------------------
-// USER DETAILS SHEET
+// USER DETAILS SHEET (DARK MODE SAFE)
 // --------------------------------------------------
 class _UserDetailsSheet extends StatelessWidget {
   final String name;
@@ -263,6 +253,9 @@ class _UserDetailsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
@@ -270,13 +263,27 @@ class _UserDetailsSheet extends StatelessWidget {
         children: [
           Text(
             name,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: cs.onSurface,
+            ),
           ),
           const SizedBox(height: 8),
-          Text(email, style: TextStyle(color: Colors.grey.shade600)),
+          Text(
+            email,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 16),
-          Text("Role: ${role.toUpperCase()}"),
-          Text("Status: ${active ? "ACTIVE" : "DISABLED"}"),
+          Text(
+            "Role: ${role.toUpperCase()}",
+            style: theme.textTheme.bodyMedium,
+          ),
+          Text(
+            "Status: ${active ? "ACTIVE" : "DISABLED"}",
+            style: theme.textTheme.bodyMedium,
+          ),
         ],
       ),
     );

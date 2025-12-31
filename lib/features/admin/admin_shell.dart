@@ -16,7 +16,6 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _currentIndex = 0;
 
-  // Pages are immutable → mark as final & const where possible
   final List<Widget> _pages = const [
     AdminHome(),
     AdminCoursesScreen(),
@@ -27,21 +26,19 @@ class _AdminShellState extends State<AdminShell> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     return Scaffold(
-      // ✅ Use theme background (keeps same visual, but centralized)
       backgroundColor: theme.scaffoldBackgroundColor,
 
-      // Keeps state of each tab alive (already correct)
       body: IndexedStack(index: _currentIndex, children: _pages),
 
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
+          color: cs.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: cs.shadow.withOpacity(0.08),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
@@ -54,44 +51,44 @@ class _AdminShellState extends State<AdminShell> {
                 return TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
+                  color: cs.primary,
                 );
               }
               return TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey.shade500,
+                color: cs.onSurfaceVariant,
               );
             }),
           ),
           child: NavigationBar(
             height: 70,
-            backgroundColor: theme.colorScheme.surface,
+            backgroundColor: cs.surface,
             elevation: 0,
             selectedIndex: _currentIndex,
-            indicatorColor: colorScheme.primary.withOpacity(0.1),
+            indicatorColor: cs.primary.withOpacity(0.12),
             animationDuration: const Duration(milliseconds: 500),
             onDestinationSelected: _onTabSelected,
             destinations: [
               _buildNavDest(
                 label: "Dashboard",
                 icon: HugeIcons.strokeRoundedHome01,
-                colorScheme: colorScheme,
+                colorScheme: cs,
               ),
               _buildNavDest(
                 label: "Courses",
                 icon: HugeIcons.strokeRoundedBookOpen01,
-                colorScheme: colorScheme,
+                colorScheme: cs,
               ),
               _buildNavDest(
                 label: "Users",
                 icon: HugeIcons.strokeRoundedUserGroup,
-                colorScheme: colorScheme,
+                colorScheme: cs,
               ),
               _buildNavDest(
                 label: "Profile",
                 icon: HugeIcons.strokeRoundedUser,
-                colorScheme: colorScheme,
+                colorScheme: cs,
               ),
             ],
           ),
@@ -105,14 +102,13 @@ class _AdminShellState extends State<AdminShell> {
     setState(() => _currentIndex = index);
   }
 
-  // Helper method (UI unchanged)
   NavigationDestination _buildNavDest({
     required String label,
     required dynamic icon,
     required ColorScheme colorScheme,
   }) {
     return NavigationDestination(
-      icon: HugeIcon(icon: icon, size: 24, color: Colors.grey.shade500),
+      icon: HugeIcon(icon: icon, size: 24, color: colorScheme.onSurfaceVariant),
       selectedIcon: HugeIcon(icon: icon, size: 24, color: colorScheme.primary),
       label: label,
     );

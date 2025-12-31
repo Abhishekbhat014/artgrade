@@ -1,7 +1,7 @@
 import 'package:artgrade/utils/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:url_launcher/url_launcher.dart'; // Add to pubspec.yaml if you want email tapping
+import 'package:url_launcher/url_launcher.dart';
 
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
@@ -12,7 +12,8 @@ class AboutUsScreen extends StatelessWidget {
     final cs = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
+      backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -22,30 +23,28 @@ class AboutUsScreen extends StatelessWidget {
             icon: HugeIcons.strokeRoundedArrowLeft01,
             size: 20,
           ),
-          color: Colors.black87,
+          color: cs.onSurface,
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "About Us",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         child: Column(
           children: [
-            // 1. Brand Header
             const _BrandHeader(),
-
             const SizedBox(height: 32),
 
-            // 2. Info Cards
             _FeatureCard(
               icon: HugeIcons.strokeRoundedBookOpen01,
-              color: Colors.blueAccent,
+              color: cs.primary,
               title: "What is ArtGrade?",
               content:
                   "ArtGrade is a structured learning platform designed to guide students through art education step-by-step. Each course is carefully organized to support consistent progress.",
@@ -55,12 +54,11 @@ class AboutUsScreen extends StatelessWidget {
               color: Colors.orange,
               title: "Our Mission",
               content:
-                  "Our mission is to make art education accessible, trackable, and engaging — especially for students preparing for graded examinations and structured programs.",
+                  "Our mission is to make art education accessible, trackable, and engaging — especially for students preparing for graded examinations.",
             ),
 
             const SizedBox(height: 16),
 
-            // 3. Developer Details (NEW)
             const _DeveloperCard(
               name: "Abhishek Bhat",
               role: "Lead Developer & Creator",
@@ -68,8 +66,6 @@ class AboutUsScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 24),
-
-            // 4. Footer
             _AppFooter(colorScheme: cs),
             const SizedBox(height: 24),
           ],
@@ -80,7 +76,7 @@ class AboutUsScreen extends StatelessWidget {
 }
 
 /* =======================================================
-   COMPONENTS
+   BRAND HEADER
 ======================================================= */
 
 class _BrandHeader extends StatelessWidget {
@@ -88,46 +84,39 @@ class _BrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         Container(
           height: 100,
           width: 100,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cs.surface,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: cs.shadow.withOpacity(0.15),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
             ],
           ),
           child: Center(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(50),
-              child: Image.asset(
-                'assets/images/ArtGradeLogo.png',
-                width: 60,
-                height: 60,
-                errorBuilder: (c, o, s) => const HugeIcon(
-                  icon: HugeIcons.strokeRoundedPaintBoard,
-                  size: 40,
-                  color: Color(0xFF2D3142),
-                ),
-              ),
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedPaintBoard,
+              size: 40,
+              color: cs.primary,
             ),
           ),
         ),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           "ArtGrade",
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w900,
-            color: Color(0xFF2D3142),
-            letterSpacing: -0.5,
+            color: cs.onSurface,
           ),
         ),
         const SizedBox(height: 8),
@@ -135,7 +124,7 @@ class _BrandHeader extends StatelessWidget {
           "Mastering Art, One Grade at a Time",
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey.shade500,
+            color: cs.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -143,6 +132,10 @@ class _BrandHeader extends StatelessWidget {
     );
   }
 }
+
+/* =======================================================
+   FEATURE CARD
+======================================================= */
 
 class _FeatureCard extends StatelessWidget {
   final dynamic icon;
@@ -159,15 +152,17 @@ class _FeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: cs.shadow.withOpacity(0.12),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -181,7 +176,7 @@ class _FeatureCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: HugeIcon(icon: icon, size: 24, color: color),
@@ -189,10 +184,10 @@ class _FeatureCard extends StatelessWidget {
               const SizedBox(width: 16),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3142),
+                  color: cs.onSurface,
                 ),
               ),
             ],
@@ -203,8 +198,7 @@ class _FeatureCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               height: 1.6,
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w400,
+              color: cs.onSurfaceVariant,
             ),
           ),
         ],
@@ -213,9 +207,10 @@ class _FeatureCard extends StatelessWidget {
   }
 }
 
-// -------------------------------------------------------
-// NEW: DEVELOPER CARD
-// -------------------------------------------------------
+/* =======================================================
+   DEVELOPER CARD
+======================================================= */
+
 class _DeveloperCard extends StatelessWidget {
   final String name;
   final String role;
@@ -229,41 +224,36 @@ class _DeveloperCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 8, bottom: 12),
-          child: Text(
-            "Developed By",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
+        Text(
+          "Developed By",
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: cs.onSurfaceVariant,
           ),
         ),
+        const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cs.surface,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
+              BoxShadow(color: cs.shadow.withOpacity(0.12), blurRadius: 16),
             ],
           ),
           child: Row(
             children: [
-              // Avatar
               Container(
                 height: 56,
                 width: 56,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2D3142),
+                  color: cs.primary,
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: const Center(
@@ -275,68 +265,44 @@ class _DeveloperCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-
-              // Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2D3142),
+                        color: cs.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 4),
                     Text(
                       role,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade500,
-                        fontWeight: FontWeight.w500,
+                        color: cs.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // Contact Button
               IconButton(
                 onPressed: () async {
-                  final Uri emailUri = Uri(
+                  final uri = Uri(
                     scheme: 'mailto',
                     path: email,
-                    query: Uri.encodeQueryComponent(
-                      'subject=ArtGrade Support&body=Hello Abhishek,',
-                    ),
+                    query: 'subject=ArtGrade Support&body=Hello Abhishek,',
                   );
 
-                  try {
-                    await launchUrl(
-                      emailUri,
-                      mode: LaunchMode.externalApplication,
-                    );
-                  } catch (_) {
-                    // optional: snackbar (logic-only addition)
-                    if (context.mounted) {
-                      AppSnackBar.show(context, "No email app found");
-                    }
+                  if (!await launchUrl(uri)) {
+                    AppSnackBar.show(context, "No email app found");
                   }
                 },
-
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: HugeIcon(
-                    icon: HugeIcons.strokeRoundedMail02,
-                    size: 20,
-                    color: Colors.blueAccent,
-                  ),
+                icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedMail02,
+                  size: 20,
+                  color: cs.primary,
                 ),
               ),
             ],
@@ -347,6 +313,10 @@ class _DeveloperCard extends StatelessWidget {
   }
 }
 
+/* =======================================================
+   FOOTER
+======================================================= */
+
 class _AppFooter extends StatelessWidget {
   final ColorScheme colorScheme;
   const _AppFooter({required this.colorScheme});
@@ -355,24 +325,19 @@ class _AppFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Divider(color: Colors.grey.shade200, thickness: 1),
-        const SizedBox(height: 24),
+        Divider(color: colorScheme.outlineVariant),
+        const SizedBox(height: 16),
         Text(
           "© ${DateTime.now().year} ArtGrade",
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade400,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           "Version 1.0.0",
           style: TextStyle(
             fontSize: 11,
-            color: colorScheme.primary.withOpacity(0.7),
+            color: colorScheme.primary,
             fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
           ),
         ),
       ],

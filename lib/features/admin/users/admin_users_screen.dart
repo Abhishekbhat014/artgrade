@@ -34,7 +34,6 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     final role = (data['role'] ?? 'student').toString().toLowerCase();
     final isActive = data['active'] ?? true;
 
-    // Search
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
       if (!('$firstName $lastName'.contains(q)) && !email.contains(q)) {
@@ -42,12 +41,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       }
     }
 
-    // Role
-    if (_roleFilter != "all" && role != _roleFilter) {
-      return false;
-    }
-
-    // Status
+    if (_roleFilter != "all" && role != _roleFilter) return false;
     if (_statusFilter == "active" && !isActive) return false;
     if (_statusFilter == "disabled" && isActive) return false;
 
@@ -70,6 +64,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         centerTitle: true,
         elevation: 0,
@@ -78,27 +73,26 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           "User Management",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
         actions: [
           IconButton(
             tooltip: "Reset Filters",
             onPressed: _resetFilters,
-            icon: const HugeIcon(
+            icon: HugeIcon(
               icon: HugeIcons.strokeRoundedRefresh,
               size: 20,
-              color: Colors.black87,
+              color: cs.onSurface,
             ),
           ),
           const SizedBox(width: 12),
         ],
       ),
+
       body: Column(
         children: [
-          // --------------------------------------------------
-          // SEARCH BAR
-          // --------------------------------------------------
+          // ---------------- SEARCH ----------------
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
             child: _SearchBox(
@@ -107,9 +101,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             ),
           ),
 
-          // --------------------------------------------------
-          // FILTER CHIPS
-          // --------------------------------------------------
+          // ---------------- FILTERS ----------------
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -136,7 +128,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   onTap: () => setState(() => _roleFilter = "admin"),
                 ),
                 const SizedBox(width: 12),
-                Container(height: 24, width: 1, color: Colors.grey.shade300),
+                Container(height: 24, width: 1, color: cs.outlineVariant),
                 const SizedBox(width: 12),
                 _FilterChip(
                   label: "Active",
@@ -158,9 +150,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           ),
           const SizedBox(height: 16),
 
-          // --------------------------------------------------
-          // USERS LIST
-          // --------------------------------------------------
+          // ---------------- USERS LIST ----------------
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -179,7 +169,6 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 }
 
                 final docs = snapshot.data?.docs ?? [];
-
                 final filtered = docs.where((doc) {
                   return _matchesFilter(doc.data() as Map<String, dynamic>);
                 }).toList();
@@ -201,10 +190,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                       ),
                       child: Text(
                         "Found ${filtered.length} users",
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade500,
                         ),
                       ),
                     ),
@@ -251,30 +239,26 @@ class _SearchBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surfaceVariant,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
         decoration: InputDecoration(
           hintText: "Search by name or email...",
+          hintStyle: TextStyle(color: cs.onSurfaceVariant),
           border: InputBorder.none,
           prefixIcon: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: HugeIcon(
               icon: HugeIcons.strokeRoundedSearch01,
               size: 22,
-              color: Colors.grey.shade400,
+              color: cs.onSurfaceVariant,
             ),
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
@@ -292,19 +276,21 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = theme.colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const HugeIcon(
+          HugeIcon(
             icon: HugeIcons.strokeRoundedUserGroup,
             size: 64,
-            color: Colors.grey,
+            color: cs.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
             "No users found",
-            style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
+            style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurface),
           ),
           if (showHint)
             Padding(
@@ -312,7 +298,7 @@ class _EmptyState extends StatelessWidget {
               child: Text(
                 "Try adjusting your filters",
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.grey.shade400,
+                  color: cs.onSurfaceVariant,
                 ),
               ),
             ),
@@ -328,6 +314,8 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = theme.colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -340,15 +328,13 @@ class _ErrorState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             "Failed to load users",
-            style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey),
+            style: theme.textTheme.bodyLarge?.copyWith(color: cs.onSurface),
           ),
         ],
       ),
     );
   }
 }
-
-// --------------------------------------------------
 
 class _FilterChip extends StatelessWidget {
   final String label;
@@ -367,7 +353,7 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final cs = Theme.of(context).colorScheme;
 
     return InkWell(
       onTap: onTap,
@@ -378,14 +364,14 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? (isStatus
-                    ? statusColor.withOpacity(0.1)
-                    : primary.withOpacity(0.1))
-              : Colors.white,
+                    ? statusColor.withOpacity(0.15)
+                    : cs.primary.withOpacity(0.15))
+              : cs.surfaceVariant,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? (isStatus ? statusColor : primary)
-                : Colors.grey.shade200,
+                ? (isStatus ? statusColor : cs.primary)
+                : cs.outlineVariant,
             width: 1.5,
           ),
         ),
@@ -393,8 +379,8 @@ class _FilterChip extends StatelessWidget {
           label,
           style: TextStyle(
             color: isSelected
-                ? (isStatus ? statusColor : primary)
-                : Colors.grey.shade600,
+                ? (isStatus ? statusColor : cs.primary)
+                : cs.onSurfaceVariant,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             fontSize: 13,
           ),

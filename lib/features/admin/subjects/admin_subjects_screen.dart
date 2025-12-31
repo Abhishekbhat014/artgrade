@@ -19,10 +19,9 @@ class AdminSubjectsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     return Scaffold(
-      // ✅ Use global theme background (same visual)
       backgroundColor: theme.scaffoldBackgroundColor,
 
       appBar: AppBar(
@@ -30,18 +29,18 @@ class AdminSubjectsScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const HugeIcon(
+          icon: HugeIcon(
             icon: HugeIcons.strokeRoundedArrowLeft01,
             size: 20,
+            color: cs.onSurface,
           ),
-          color: Colors.black87,
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Manage Subjects",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
         actions: [
@@ -58,12 +57,12 @@ class AdminSubjectsScreen extends StatelessWidget {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: colorScheme.primary,
+                color: cs.primary,
                 shape: BoxShape.circle,
               ),
-              child: const HugeIcon(
+              child: HugeIcon(
                 icon: HugeIcons.strokeRoundedAdd01,
-                color: Colors.white,
+                color: cs.onPrimary,
                 size: 20,
               ),
             ),
@@ -75,24 +74,24 @@ class AdminSubjectsScreen extends StatelessWidget {
       body: Column(
         children: [
           // --------------------------------------------------
-          // Course Context Header
+          // COURSE CONTEXT HEADER
           // --------------------------------------------------
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-            color: Colors.white,
+            color: cs.surface,
             child: Row(
               children: [
-                const HugeIcon(
+                HugeIcon(
                   icon: HugeIcons.strokeRoundedBook01,
                   size: 16,
-                  color: Colors.grey,
+                  color: cs.onSurfaceVariant,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   courseTitle,
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: Colors.grey.shade700,
+                    color: cs.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -101,7 +100,7 @@ class AdminSubjectsScreen extends StatelessWidget {
           ),
 
           // --------------------------------------------------
-          // Subjects List
+          // SUBJECT LIST
           // --------------------------------------------------
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -114,9 +113,7 @@ class AdminSubjectsScreen extends StatelessWidget {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
-                    child: CircularProgressIndicator(
-                      color: colorScheme.primary,
-                    ),
+                    child: CircularProgressIndicator(color: cs.primary),
                   );
                 }
 
@@ -147,7 +144,6 @@ class AdminSubjectsScreen extends StatelessWidget {
                       additionalDetails: data['additionalDetails'] is Map
                           ? Map<String, dynamic>.from(data['additionalDetails'])
                           : null,
-                      colorScheme: colorScheme,
                       onOpen: () {
                         Navigator.push(
                           context,
@@ -172,9 +168,9 @@ class AdminSubjectsScreen extends StatelessWidget {
   }
 }
 
-// ===================================================================
-// STATES
-// ===================================================================
+/* =======================================================
+   STATES
+======================================================= */
 
 class _EmptyState extends StatelessWidget {
   final ThemeData theme;
@@ -182,19 +178,23 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = theme.colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const HugeIcon(
+          HugeIcon(
             icon: HugeIcons.strokeRoundedLayers01,
             size: 64,
-            color: Colors.grey,
+            color: cs.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
             "No subjects created yet",
-            style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -208,18 +208,20 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = theme.colorScheme;
+
     return Center(
       child: Text(
         "Failed to load subjects",
-        style: theme.textTheme.bodyLarge?.copyWith(color: Colors.redAccent),
+        style: theme.textTheme.bodyLarge?.copyWith(color: cs.error),
       ),
     );
   }
 }
 
-// ===================================================================
-// SUBJECT CARD
-// ===================================================================
+/* =======================================================
+   SUBJECT CARD
+======================================================= */
 
 class _SubjectCard extends StatelessWidget {
   final String courseId;
@@ -228,7 +230,6 @@ class _SubjectCard extends StatelessWidget {
   final String? subtitle;
   final int? minPersons;
   final VoidCallback onOpen;
-  final ColorScheme colorScheme;
   final Map<String, dynamic>? additionalDetails;
 
   const _SubjectCard({
@@ -239,20 +240,18 @@ class _SubjectCard extends StatelessWidget {
     this.additionalDetails,
     this.minPersons,
     required this.onOpen,
-    required this.colorScheme,
   });
 
   Future<void> _deleteSubject(BuildContext context) async {
+    final cs = Theme.of(context).colorScheme;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          "Delete Subject",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Delete Subject"),
         content: const Text(
-          "This will permanently delete this subject and all materials inside it.\n\nAre you sure?",
+          "This will permanently delete this subject and all materials inside it.",
         ),
         actions: [
           TextButton(
@@ -261,7 +260,7 @@ class _SubjectCard extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: FilledButton.styleFrom(backgroundColor: cs.error),
             child: const Text("Delete"),
           ),
         ],
@@ -280,13 +279,16 @@ class _SubjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: cs.shadow.withOpacity(0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -304,17 +306,17 @@ class _SubjectCard extends StatelessWidget {
               children: [
                 _SubjectHeader(title: title, subtitle: subtitle),
                 const SizedBox(height: 16),
-                const Divider(height: 1, color: Color(0xFFEEEFF3)),
+                Divider(height: 1, color: cs.outlineVariant),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     const Spacer(),
                     IconButton(
                       tooltip: 'Edit',
-                      icon: const HugeIcon(
+                      icon: HugeIcon(
                         icon: HugeIcons.strokeRoundedPencilEdit02,
                         size: 20,
-                        color: Colors.blueGrey,
+                        color: cs.primary,
                       ),
                       onPressed: () {
                         Navigator.push(
@@ -331,13 +333,12 @@ class _SubjectCard extends StatelessWidget {
                         );
                       },
                     ),
-
                     IconButton(
                       tooltip: 'Delete',
-                      icon: const HugeIcon(
+                      icon: HugeIcon(
                         icon: HugeIcons.strokeRoundedDelete02,
                         size: 20,
-                        color: Colors.redAccent,
+                        color: cs.error,
                       ),
                       onPressed: () => _deleteSubject(context),
                     ),
@@ -352,9 +353,9 @@ class _SubjectCard extends StatelessWidget {
   }
 }
 
-// ===================================================================
-// SUB-WIDGETS
-// ===================================================================
+/* =======================================================
+   SUBJECT HEADER
+======================================================= */
 
 class _SubjectHeader extends StatelessWidget {
   final String title;
@@ -364,6 +365,9 @@ class _SubjectHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -371,14 +375,14 @@ class _SubjectHeader extends StatelessWidget {
           height: 48,
           width: 48,
           decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(0.1),
+            color: cs.secondary.withOpacity(0.12),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Center(
+          child: Center(
             child: HugeIcon(
               icon: HugeIcons.strokeRoundedLayers01,
               size: 24,
-              color: Colors.orange,
+              color: cs.secondary,
             ),
           ),
         ),
@@ -389,18 +393,16 @@ class _SubjectHeader extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 16,
+                style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3142),
+                  color: cs.onSurface,
                 ),
               ),
               if (subtitle != null && subtitle!.isNotEmpty)
                 Text(
                   subtitle!,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

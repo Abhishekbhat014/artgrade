@@ -47,12 +47,9 @@ class _EditMaterialScreenState extends State<EditMaterialScreen> {
   @override
   void initState() {
     super.initState();
-
     titleCtrl = TextEditingController(text: widget.title);
     urlCtrl = TextEditingController(text: widget.url);
     orderCtrl = TextEditingController(text: widget.order.toString());
-
-    // ✅ SAFETY: fallback if DB has unknown value
     type = _validTypes.contains(widget.type) ? widget.type : 'link';
   }
 
@@ -127,10 +124,10 @@ class _EditMaterialScreenState extends State<EditMaterialScreen> {
         labelText: label,
         hintText: hint,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: cs.surfaceVariant,
         prefixIcon: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: HugeIcon(icon: icon, size: 20, color: Colors.grey.shade500),
+          child: HugeIcon(icon: icon, size: 20, color: cs.onSurfaceVariant),
         ),
         prefixIconConstraints: const BoxConstraints(
           minWidth: 44,
@@ -139,10 +136,6 @@ class _EditMaterialScreenState extends State<EditMaterialScreen> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -157,6 +150,7 @@ class _EditMaterialScreenState extends State<EditMaterialScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         centerTitle: true,
         elevation: 0,
@@ -172,10 +166,11 @@ class _EditMaterialScreenState extends State<EditMaterialScreen> {
           "Edit Material",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Center(
@@ -188,7 +183,7 @@ class _EditMaterialScreenState extends State<EditMaterialScreen> {
                   "Material Details",
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade700,
+                    color: cs.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -208,7 +203,7 @@ class _EditMaterialScreenState extends State<EditMaterialScreen> {
                     "Material Type",
                     HugeIcons.strokeRoundedFolder02,
                   ),
-                  dropdownColor: Colors.white,
+                  dropdownColor: cs.surface,
                   items: const [
                     DropdownMenuItem(value: 'pdf', child: Text("PDF Document")),
                     DropdownMenuItem(value: 'video', child: Text("Video")),
@@ -247,6 +242,12 @@ class _EditMaterialScreenState extends State<EditMaterialScreen> {
 
                 FilledButton(
                   onPressed: loading ? null : _saveChanges,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   child: loading
                       ? SizedBox(
                           height: 24,

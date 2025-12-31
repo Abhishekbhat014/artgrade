@@ -12,10 +12,11 @@ class AdminCoursesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         centerTitle: true,
         elevation: 0,
@@ -24,7 +25,7 @@ class AdminCoursesScreen extends StatelessWidget {
           "Manage Courses",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
         actions: [
@@ -39,10 +40,10 @@ class AdminCoursesScreen extends StatelessWidget {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: colorScheme.primary,
+                color: cs.primary,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.add, color: Colors.white, size: 20),
+              child: Icon(Icons.add, color: cs.onPrimary, size: 20),
             ),
           ),
           const SizedBox(width: 12),
@@ -56,9 +57,7 @@ class AdminCoursesScreen extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(color: colorScheme.primary),
-            );
+            return Center(child: CircularProgressIndicator(color: cs.primary));
           }
 
           if (snapshot.hasError) {
@@ -81,17 +80,14 @@ class AdminCoursesScreen extends StatelessWidget {
 
               return _CourseCard(
                 courseId: doc.id,
-                title: data['title']?.toString() ?? '',
-                description: data['description']?.toString(),
-                level: data['level']?.toString() ?? '',
-                order: data['order'] as int?,
+                title: data['title'] ?? '',
+                description: data['description'],
+                level: data['level'] ?? '',
+                order: data['order'],
                 active: data['active'] == true,
                 additionalDetails: data['additionalDetails'] is Map
-                    ? Map<String, dynamic>.from(
-                        data['additionalDetails'] as Map,
-                      )
+                    ? Map<String, dynamic>.from(data['additionalDetails'])
                     : null,
-                colorScheme: colorScheme,
               );
             },
           );
@@ -101,9 +97,9 @@ class AdminCoursesScreen extends StatelessWidget {
   }
 }
 
-// ===================================================================
-// STATES
-// ===================================================================
+/* =======================================================
+   STATES
+======================================================= */
 
 class _EmptyState extends StatelessWidget {
   final ThemeData theme;
@@ -111,19 +107,23 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = theme.colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const HugeIcon(
+          HugeIcon(
             icon: HugeIcons.strokeRoundedBookOpen01,
             size: 64,
-            color: Colors.grey,
+            color: cs.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
             "No courses created yet",
-            style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -137,18 +137,20 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = theme.colorScheme;
+
     return Center(
       child: Text(
         "Failed to load courses",
-        style: theme.textTheme.bodyLarge?.copyWith(color: Colors.redAccent),
+        style: theme.textTheme.bodyLarge?.copyWith(color: cs.error),
       ),
     );
   }
 }
 
-// ===================================================================
-// COURSE CARD
-// ===================================================================
+/* =======================================================
+   COURSE CARD
+======================================================= */
 
 class _CourseCard extends StatelessWidget {
   final String courseId;
@@ -158,7 +160,6 @@ class _CourseCard extends StatelessWidget {
   final int? order;
   final bool active;
   final Map<String, dynamic>? additionalDetails;
-  final ColorScheme colorScheme;
 
   const _CourseCard({
     required this.courseId,
@@ -168,18 +169,16 @@ class _CourseCard extends StatelessWidget {
     this.order,
     required this.active,
     this.additionalDetails,
-    required this.colorScheme,
   });
 
   Future<void> _deleteCourse(BuildContext context) async {
+    final cs = Theme.of(context).colorScheme;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          "Delete Course",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Delete Course"),
         content: const Text(
           "This will permanently delete this course. This action cannot be undone.",
         ),
@@ -190,7 +189,7 @@ class _CourseCard extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: FilledButton.styleFrom(backgroundColor: cs.error),
             child: const Text("Delete"),
           ),
         ],
@@ -207,13 +206,15 @@ class _CourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: cs.shadow.withOpacity(0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -242,21 +243,22 @@ class _CourseCard extends StatelessWidget {
                   level: level,
                   description: description,
                   active: active,
-                  colorScheme: colorScheme,
                 ),
                 const SizedBox(height: 16),
-                const Divider(height: 1),
+                Divider(color: cs.outlineVariant),
                 const SizedBox(height: 8),
+
                 Row(
                   children: [
                     _StatusChip(active: active),
                     const Spacer(),
+
                     IconButton(
                       tooltip: 'Edit',
-                      icon: const HugeIcon(
+                      icon: HugeIcon(
                         icon: HugeIcons.strokeRoundedPencilEdit02,
                         size: 20,
-                        color: Colors.blueGrey,
+                        color: cs.primary,
                       ),
                       onPressed: () {
                         Navigator.push(
@@ -275,12 +277,13 @@ class _CourseCard extends StatelessWidget {
                         );
                       },
                     ),
+
                     IconButton(
                       tooltip: 'Delete',
-                      icon: const HugeIcon(
+                      icon: HugeIcon(
                         icon: HugeIcons.strokeRoundedDelete02,
                         size: 20,
-                        color: Colors.redAccent,
+                        color: cs.error,
                       ),
                       onPressed: () => _deleteCourse(context),
                     ),
@@ -300,18 +303,18 @@ class _CourseHeader extends StatelessWidget {
   final String level;
   final String? description;
   final bool active;
-  final ColorScheme colorScheme;
 
   const _CourseHeader({
     required this.title,
     required this.level,
     required this.description,
     required this.active,
-    required this.colorScheme,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -319,30 +322,29 @@ class _CourseHeader extends StatelessWidget {
           height: 48,
           width: 48,
           decoration: BoxDecoration(
-            color: active
-                ? colorScheme.primary.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.1),
+            color: active ? cs.primary.withOpacity(0.12) : cs.surfaceVariant,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Center(
             child: HugeIcon(
               icon: HugeIcons.strokeRoundedBook01,
               size: 24,
-              color: active ? colorScheme.primary : Colors.grey,
+              color: active ? cs.primary : cs.onSurfaceVariant,
             ),
           ),
         ),
         const SizedBox(width: 16),
+
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3142),
+                  color: cs.onSurface,
                 ),
               ),
               if (level.isNotEmpty)
@@ -351,7 +353,7 @@ class _CourseHeader extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: colorScheme.secondary,
+                    color: cs.secondary,
                   ),
                 ),
               if (description != null && description!.isNotEmpty)
@@ -359,7 +361,7 @@ class _CourseHeader extends StatelessWidget {
                   description!,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.grey.shade600),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
                 ),
             ],
           ),
@@ -375,11 +377,13 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? Colors.green : Colors.red;
+    final cs = Theme.of(context).colorScheme;
+    final color = active ? Colors.green : cs.error;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(

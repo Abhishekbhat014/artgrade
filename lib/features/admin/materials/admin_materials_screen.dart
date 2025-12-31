@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'add_material_screen.dart';
-import 'edit_material_screen.dart'; // Import the edit screen
+import 'edit_material_screen.dart';
 
 class AdminMaterialsScreen extends StatelessWidget {
   final String courseId;
@@ -20,44 +20,29 @@ class AdminMaterialsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
+      backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
           "Manage Materials",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedArrowLeft01,
-            size: 20,
-          ),
-          color: Colors.black87,
-          onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
             tooltip: "Add New Material",
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-                shape: BoxShape.circle,
-              ),
-              child: const HugeIcon(
-                icon: HugeIcons.strokeRoundedAdd01,
-                size: 20,
-                color: Colors.white,
-              ),
-            ),
             onPressed: () {
               Navigator.push(
                 context,
@@ -69,29 +54,42 @@ class AdminMaterialsScreen extends StatelessWidget {
                 ),
               );
             },
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: cs.primary,
+                shape: BoxShape.circle,
+              ),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedAdd01,
+                size: 20,
+                color: Colors.black,
+              ),
+            ),
           ),
           const SizedBox(width: 12),
         ],
       ),
+
       body: Column(
         children: [
           // Context Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-            color: Colors.white,
+            color: cs.surface,
             child: Row(
               children: [
-                const HugeIcon(
+                HugeIcon(
                   icon: HugeIcons.strokeRoundedLayers01,
                   size: 16,
-                  color: Colors.grey,
+                  color: cs.onSurfaceVariant,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   subjectTitle,
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: Colors.grey.shade700,
+                    color: cs.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -112,20 +110,18 @@ class AdminMaterialsScreen extends StatelessWidget {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
-                    child: CircularProgressIndicator(
-                      color: colorScheme.primary,
-                    ),
+                    child: CircularProgressIndicator(color: cs.primary),
                   );
                 }
 
                 if (snapshot.hasError) {
-                  return _errorState(theme);
+                  return _errorState(context);
                 }
 
                 final docs = snapshot.data?.docs ?? [];
 
                 if (docs.isEmpty) {
-                  return _emptyState(theme);
+                  return _emptyState(context);
                 }
 
                 return ListView.separated(
@@ -143,7 +139,6 @@ class AdminMaterialsScreen extends StatelessWidget {
                       title: data['title'] ?? '',
                       type: data['type'] ?? 'link',
                       url: data['url'] ?? '',
-                      // Safely fetch order or default to 0
                       order: (data['order'] as num?)?.toInt() ?? 0,
                     );
                   },
@@ -156,38 +151,42 @@ class AdminMaterialsScreen extends StatelessWidget {
     );
   }
 
-  Widget _emptyState(ThemeData theme) {
+  Widget _emptyState(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const HugeIcon(
+          HugeIcon(
             icon: HugeIcons.strokeRoundedFolder02,
             size: 64,
-            color: Colors.grey,
+            color: cs.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
             "No materials added yet",
-            style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant),
           ),
         ],
       ),
     );
   }
 
-  Widget _errorState(ThemeData theme) {
+  Widget _errorState(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Center(
       child: Text(
         "Failed to load materials",
-        style: theme.textTheme.bodyLarge?.copyWith(color: Colors.redAccent),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: cs.error),
       ),
     );
   }
 }
 
 // --------------------------------------------------
-// MATERIAL CARD
+// MATERIAL CARD (THEME SAFE)
 // --------------------------------------------------
 
 class _MaterialCard extends StatelessWidget {
@@ -197,7 +196,7 @@ class _MaterialCard extends StatelessWidget {
   final String title;
   final String type;
   final String url;
-  final int order; // Added order for editing
+  final int order;
 
   const _MaterialCard({
     required this.materialId,
@@ -209,98 +208,39 @@ class _MaterialCard extends StatelessWidget {
     required this.order,
   });
 
-  Future<void> _deleteMaterial(BuildContext context) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          "Delete Material",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          "This will permanently delete this material link.",
-          style: TextStyle(color: Colors.black54, fontSize: 15),
-        ),
-        actionsAlignment: MainAxisAlignment.end,
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.grey.shade600,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
-            child: const Text(
-              "Cancel",
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          const SizedBox(width: 8),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              "Delete",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    await FirebaseFirestore.instance
-        .collection('courses')
-        .doc(courseId)
-        .collection('subjects')
-        .doc(subjectId)
-        .collection('materials')
-        .doc(materialId)
-        .delete();
-  }
-
   @override
   Widget build(BuildContext context) {
-    dynamic iconData;
-    Color typeColor;
-    String typeLabel;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    dynamic icon;
+    Color color;
+    String label;
 
     switch (type) {
       case 'pdf':
-        iconData = HugeIcons.strokeRoundedPdf02;
-        typeColor = const Color(0xFFFF5252);
-        typeLabel = "PDF Document";
+        icon = HugeIcons.strokeRoundedPdf02;
+        color = Colors.redAccent;
+        label = "PDF Document";
         break;
       case 'video':
-        iconData = HugeIcons.strokeRoundedVideoReplay;
-        typeColor = const Color(0xFF448AFF);
-        typeLabel = "Video Lecture";
+        icon = HugeIcons.strokeRoundedVideoReplay;
+        color = Colors.blueAccent;
+        label = "Video Lecture";
         break;
       default:
-        iconData = HugeIcons.strokeRoundedLink02;
-        typeColor = const Color(0xFF00E676);
-        typeLabel = "External Link";
+        icon = HugeIcons.strokeRoundedLink02;
+        color = Colors.green;
+        label = "External Link";
     }
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: cs.shadow.withOpacity(0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -310,47 +250,41 @@ class _MaterialCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            // 1. Icon Box
             Container(
               height: 52,
               width: 52,
               decoration: BoxDecoration(
-                color: typeColor.withOpacity(0.1),
+                color: color.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Center(
-                child: HugeIcon(icon: iconData, size: 26, color: typeColor),
+                child: HugeIcon(icon: icon, size: 26, color: color),
               ),
             ),
             const SizedBox(width: 16),
 
-            // 2. Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2D3142),
+                      color: cs.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    typeLabel,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade500,
+                    label,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: cs.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
 
-            // 3. Edit Action
             IconButton(
               onPressed: () {
                 Navigator.push(
@@ -368,18 +302,15 @@ class _MaterialCard extends StatelessWidget {
                   ),
                 );
               },
-              tooltip: "Edit Material",
-              icon: const HugeIcon(
+              icon: HugeIcon(
                 icon: HugeIcons.strokeRoundedPencilEdit02,
                 size: 20,
-                color: Colors.blueGrey,
+                color: cs.primary,
               ),
             ),
 
-            // 4. Delete Action
             IconButton(
-              onPressed: () => _deleteMaterial(context),
-              tooltip: "Delete Material",
+              onPressed: () => _delete(context),
               icon: const HugeIcon(
                 icon: HugeIcons.strokeRoundedDelete02,
                 size: 20,
@@ -390,5 +321,39 @@ class _MaterialCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _delete(BuildContext context) async {
+    final cs = Theme.of(context).colorScheme;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Delete Material"),
+        content: const Text("This will permanently delete this material."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: cs.error),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await FirebaseFirestore.instance
+          .collection('courses')
+          .doc(courseId)
+          .collection('subjects')
+          .doc(subjectId)
+          .collection('materials')
+          .doc(materialId)
+          .delete();
+    }
   }
 }

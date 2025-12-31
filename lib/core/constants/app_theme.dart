@@ -4,53 +4,64 @@ import 'colors.dart';
 class AppTheme {
   AppTheme._();
 
+  // =========================
+  // 🌞 LIGHT THEME
+  // =========================
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     fontFamily: 'Nunito',
+    brightness: Brightness.light,
 
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.primary,
+      brightness: Brightness.light,
       surface: AppColors.surface,
       onSurface: AppColors.onSurface,
       primary: AppColors.primary,
       secondary: AppColors.secondary,
-      brightness: Brightness.light,
     ),
 
     scaffoldBackgroundColor: AppColors.surface,
 
-    // FIX: Explicitly set thicker weights for everything
+    // ✅ Added AppBar Theme for consistency
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      iconTheme: IconThemeData(color: AppColors.onSurface),
+      titleTextStyle: TextStyle(
+        fontFamily: 'Nunito',
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: AppColors.onSurface,
+      ),
+    ),
+
+    // ✅ Added Icon Theme
+    iconTheme: const IconThemeData(color: AppColors.onSurface, size: 24),
+
     textTheme: const TextTheme(
-      // HEADLINES: Use Bold (w700) or ExtraBold (w800)
       headlineMedium: TextStyle(
         fontSize: 28,
-        fontWeight: FontWeight.w800, // Thicker than before
+        fontWeight: FontWeight.w800,
         color: AppColors.onSurface,
         letterSpacing: -0.5,
       ),
-
-      // BODY TEXT: Default to Medium (w500) or SemiBold (w600)
-      // instead of Normal (w400) which looks thin in Nunito.
       bodyLarge: TextStyle(
         fontSize: 16,
-        fontWeight: FontWeight.w600, // Much easier to read
-        color: Color(0xFF001E45), // Darker than standard black for contrast
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF001E45),
       ),
       bodyMedium: TextStyle(
         fontSize: 14,
-        fontWeight: FontWeight.w600, // Thicker for subtitles/links
+        fontWeight: FontWeight.w600,
         color: Color(0xFF001E45),
       ),
     ),
 
-    // INPUT FIELDS: Make text inside inputs thicker
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.inputFill,
-      prefixIconColor: Colors.grey,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-
-      // Labels and Hint text need to be readable too
       labelStyle: const TextStyle(
         fontWeight: FontWeight.w600,
         color: Colors.black54,
@@ -59,10 +70,9 @@ class AppTheme {
         fontWeight: FontWeight.w500,
         color: Colors.black38,
       ),
-
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.transparent),
+        borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -74,7 +84,6 @@ class AppTheme {
       ),
     ),
 
-    // BUTTONS: Make text bold
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.primary,
@@ -84,7 +93,107 @@ class AppTheme {
         textStyle: const TextStyle(
           fontFamily: 'Nunito',
           fontSize: 16,
-          fontWeight: FontWeight.w800, // Extra Bold for buttons
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        ),
+      ),
+    ),
+  );
+
+  // =========================
+  // 🌙 DARK THEME (Polished)
+  // =========================
+  static ThemeData darkTheme = ThemeData(
+    useMaterial3: true,
+    fontFamily: 'Nunito',
+    brightness: Brightness.dark,
+
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      brightness: Brightness.dark,
+      // Dark Slate Background (Modern & easier on eyes than pure black)
+      surface: const Color(0xFF0F172A),
+      onSurface: const Color(0xFFF8FAFC),
+      primary: AppColors.primary,
+      secondary: AppColors.secondary,
+    ),
+
+    scaffoldBackgroundColor: const Color(0xFF0F172A),
+
+    // ✅ Fix: Ensure AppBar text/icons are white in dark mode
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      iconTheme: IconThemeData(color: Color(0xFFF8FAFC)),
+      titleTextStyle: TextStyle(
+        fontFamily: 'Nunito',
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFFF8FAFC),
+      ),
+    ),
+
+    // ✅ Fix: Default all icons to white
+    iconTheme: const IconThemeData(color: Color(0xFFF8FAFC), size: 24),
+
+    textTheme: const TextTheme(
+      headlineMedium: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.w800,
+        color: Color(0xFFF8FAFC), // White
+        letterSpacing: -0.5,
+      ),
+      bodyLarge: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFFCBD5E1), // Light Grey
+      ),
+      bodyMedium: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFFCBD5E1),
+      ),
+    ),
+
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      // Slightly lighter than background for depth
+      fillColor: const Color(0xFF1E293B),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+
+      labelStyle: const TextStyle(
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF94A3B8), // Muted Grey
+      ),
+      hintStyle: const TextStyle(
+        fontWeight: FontWeight.w500,
+        color: Color(0xFF64748B), // Darker Grey
+      ),
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+    ),
+
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white, // Ensure text is white on primary
+        minimumSize: const Size.fromHeight(52),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(
+          fontFamily: 'Nunito',
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
           letterSpacing: 0.5,
         ),
       ),

@@ -15,7 +15,8 @@ class StudentCoursesScreen extends StatelessWidget {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
+      backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -24,41 +25,27 @@ class StudentCoursesScreen extends StatelessWidget {
           "All Courses",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ==================================================
-            // GREETING
+            // HEADER TEXT
             // ==================================================
-            FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(uid)
-                  .get(),
-              builder: (context, snapshot) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 10, bottom: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Explore our curated art courses",
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+            Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 24),
+              child: Text(
+                "Explore our curated art courses",
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
             ),
 
             // ==================================================
@@ -68,7 +55,7 @@ class StudentCoursesScreen extends StatelessWidget {
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('courses')
-                    .orderBy('order') // ✅ SAFE
+                    .orderBy('order')
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -78,17 +65,16 @@ class StudentCoursesScreen extends StatelessWidget {
                   }
 
                   if (!snapshot.hasData) {
-                    return _EmptyState(theme: theme);
+                    return _EmptyState();
                   }
 
-                  /// ✅ FILTER ACTIVE COURSES SAFELY
                   final courses = snapshot.data!.docs.where((doc) {
                     final data = doc.data() as Map<String, dynamic>;
-                    return data['active'] != false; // null or true = allowed
+                    return data['active'] != false;
                   }).toList();
 
                   if (courses.isEmpty) {
-                    return _EmptyState(theme: theme);
+                    return _EmptyState();
                   }
 
                   return ListView.separated(
@@ -103,7 +89,6 @@ class StudentCoursesScreen extends StatelessWidget {
                         title: data['title'] ?? 'Untitled Course',
                         description: data['description'] ?? '',
                         level: data['level'],
-                        colorScheme: cs,
                         onTap: () {
                           onOpenCourse(course.id, data['title'] ?? 'Course');
                         },
@@ -121,33 +106,33 @@ class StudentCoursesScreen extends StatelessWidget {
 }
 
 // ==================================================
-// COURSE CARD (UNCHANGED DESIGN)
+// COURSE CARD (THEME SAFE)
 // ==================================================
 
 class _CourseCard extends StatelessWidget {
   final String title;
   final String description;
   final String? level;
-  final ColorScheme colorScheme;
   final VoidCallback onTap;
 
   const _CourseCard({
     required this.title,
     required this.description,
-    required this.colorScheme,
     required this.onTap,
     this.level,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: cs.shadow.withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -166,17 +151,18 @@ class _CourseCard extends StatelessWidget {
                   height: 56,
                   width: 56,
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.08),
+                    color: cs.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
                     child: HugeIcon(
                       icon: HugeIcons.strokeRoundedPaintBoard,
                       size: 28,
-                      color: colorScheme.primary,
+                      color: cs.primary,
                     ),
                   ),
                 ),
+
                 const SizedBox(width: 16),
 
                 Expanded(
@@ -185,36 +171,36 @@ class _CourseCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF2D3142),
+                          color: cs.onSurface,
                         ),
                       ),
+
                       if (level != null) ...[
                         const SizedBox(height: 4),
                         Text(
                           level!.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.primary,
-                            letterSpacing: 0.5,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: cs.primary,
+                                letterSpacing: 0.5,
+                              ),
                         ),
                       ],
+
                       if (description.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
                           description,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            height: 1.4,
-                            color: Colors.grey.shade500,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                height: 1.4,
+                                color: cs.onSurfaceVariant,
+                              ),
                         ),
                       ],
                     ],
@@ -222,10 +208,11 @@ class _CourseCard extends StatelessWidget {
                 ),
 
                 const SizedBox(width: 12),
+
                 HugeIcon(
                   icon: HugeIcons.strokeRoundedArrowRight01,
-                  size: 16,
-                  color: Colors.grey.shade300,
+                  size: 18,
+                  color: cs.onSurfaceVariant,
                 ),
               ],
             ),
@@ -237,28 +224,30 @@ class _CourseCard extends StatelessWidget {
 }
 
 // ==================================================
-// EMPTY STATE
+// EMPTY STATE (THEME SAFE)
 // ==================================================
 
 class _EmptyState extends StatelessWidget {
-  final ThemeData theme;
-  const _EmptyState({required this.theme});
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const HugeIcon(
+          HugeIcon(
             icon: HugeIcons.strokeRoundedBookOpen01,
             size: 64,
-            color: Colors.grey,
+            color: cs.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
             "No active courses available",
-            style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
           ),
         ],
       ),

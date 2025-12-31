@@ -1,9 +1,9 @@
-import 'package:artgrade/utils/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:artgrade/utils/snackbar.dart';
 import '../../auth/login_screen.dart';
 
 class AdminProfileScreen extends StatelessWidget {
@@ -27,58 +27,62 @@ class AdminProfileScreen extends StatelessWidget {
           "Profile",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
       ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator(color: cs.primary));
-          }
+      body: SafeArea(
+        child: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return Center(
+                child: CircularProgressIndicator(color: cs.primary),
+              );
+            }
 
-          if (!snapshot.data!.exists) {
-            return const _ErrorState();
-          }
+            if (!snapshot.data!.exists) {
+              return const _ErrorState();
+            }
 
-          final data = snapshot.data!.data() as Map<String, dynamic>;
+            final data = snapshot.data!.data() as Map<String, dynamic>;
 
-          return Stack(
-            children: [
-              _ProfileContent(data: data),
-              Positioned(
-                top: 0,
-                right: 16,
-                child: IconButton(
-                  tooltip: "Edit Profile",
-                  onPressed: () => _openEditSheet(context, user.uid, data),
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedPencilEdit02,
-                      size: 20,
-                      color: cs.primary,
+            return Stack(
+              children: [
+                _ProfileContent(data: data),
+                Positioned(
+                  top: 8,
+                  right: 16,
+                  child: IconButton(
+                    tooltip: "Edit Profile",
+                    onPressed: () => _openEditSheet(context, user.uid, data),
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: cs.shadow.withOpacity(0.15),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedPencilEdit02,
+                        size: 20,
+                        color: cs.primary,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -107,7 +111,8 @@ class _ProfileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     final firstName = data['firstName'] ?? '';
     final lastName = data['lastName'] ?? '';
@@ -122,24 +127,26 @@ class _ProfileContent extends StatelessWidget {
         "${d.month.toString().padLeft(2, '0')}/${d.year}";
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        24,
+        24,
+        MediaQuery.of(context).padding.bottom + 24,
+      ),
       child: Column(
         children: [
-          const SizedBox(height: 16),
           const _Avatar(),
           const SizedBox(height: 16),
           Text(
             "$firstName $lastName",
-            style: const TextStyle(
-              fontSize: 22,
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2D3142),
+              color: cs.onSurface,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           _RoleBadge(colorScheme: cs),
           const SizedBox(height: 32),
-
           _Card(
             children: [
               _ProfileRow(
@@ -172,9 +179,7 @@ class _ProfileContent extends StatelessWidget {
                 ),
             ],
           ),
-
           const SizedBox(height: 32),
-
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -202,7 +207,7 @@ class _ProfileContent extends StatelessWidget {
 }
 
 /* =======================================================
-   EDIT PROFILE SHEET
+   EDIT PROFILE SHEET (WITH DOB)
 ======================================================= */
 
 class _EditProfileSheet extends StatefulWidget {
@@ -219,10 +224,31 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   late final TextEditingController firstNameCtrl;
   late final TextEditingController lastNameCtrl;
   late final TextEditingController phoneCtrl;
+  late final TextEditingController dobCtrl;
+
   late String gender;
   DateTime? dob;
-
   bool loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    firstNameCtrl = TextEditingController(text: widget.data['firstName'] ?? '');
+    lastNameCtrl = TextEditingController(text: widget.data['lastName'] ?? '');
+    phoneCtrl = TextEditingController(text: widget.data['phone'] ?? '');
+    gender = widget.data['gender'] ?? 'Male';
+
+    dob = (widget.data['dob'] as Timestamp?)?.toDate();
+
+    dobCtrl = TextEditingController(text: dob != null ? _formatDob(dob!) : '');
+  }
+
+  String _formatDob(DateTime d) =>
+      "${d.day.toString().padLeft(2, '0')}/"
+      "${d.month.toString().padLeft(2, '0')}/"
+      "${d.year}";
+
   Future<void> _pickDob() async {
     final now = DateTime.now();
 
@@ -235,104 +261,29 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     );
 
     if (picked != null) {
-      setState(() => dob = picked);
+      setState(() {
+        dob = picked;
+        dobCtrl.text = _formatDob(picked); // ✅ THIS FIXES DISPLAY
+      });
     }
   }
 
-  String _formatDob(DateTime? date) {
-    if (date == null) return "Select Date of Birth";
-    return "${date.day.toString().padLeft(2, '0')}/"
-        "${date.month.toString().padLeft(2, '0')}/"
-        "${date.year}";
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    firstNameCtrl = TextEditingController(text: widget.data['firstName'] ?? '');
-    lastNameCtrl = TextEditingController(text: widget.data['lastName'] ?? '');
-    phoneCtrl = TextEditingController(text: widget.data['phone'] ?? '');
-    gender = widget.data['gender'] ?? 'Male';
-    dob = (widget.data['dob'] as Timestamp?)?.toDate();
-  }
-
-  bool _isValidName(String value) {
-    final v = value.trim();
-    return v.length >= 2 && RegExp(r"^[A-Za-z]+(?: [A-Za-z]+)*$").hasMatch(v);
-  }
-
-  bool _isValidPhone(String value) {
-    final v = value.trim();
-    return RegExp(r'^[6-9][0-9]{9}$').hasMatch(v);
-  }
-
-  bool _isValidDob(DateTime dob) {
-    final today = DateTime.now();
-    if (dob.isAfter(today)) return false;
-
-    int age = today.year - dob.year;
-    if (today.month < dob.month ||
-        (today.month == dob.month && today.day < dob.day)) {
-      age--;
-    }
-    return age >= 10;
-  }
-
-  Future<void> _save() async {
+  Future<void> _saveProfile() async {
     if (loading) return;
 
     final firstName = firstNameCtrl.text.trim();
     final lastName = lastNameCtrl.text.trim();
     final phone = phoneCtrl.text.trim();
 
-    if (!_isValidName(firstName)) {
+    if (firstName.length < 2) {
       AppSnackBar.show(context, "Invalid first name", isError: true);
       return;
     }
 
-    if (lastName.isNotEmpty && !_isValidName(lastName)) {
-      AppSnackBar.show(context, "Invalid last name", isError: true);
-      return;
-    }
-
-    if (phone.isNotEmpty && !_isValidPhone(phone)) {
-      AppSnackBar.show(
-        context,
-        "Phone must be 10 digits and start with 6–9",
-        isError: true,
-      );
-      return;
-    }
-
-    if (dob != null && !_isValidDob(dob!)) {
+    if (dob != null && dob!.isAfter(DateTime.now())) {
       AppSnackBar.show(context, "Invalid date of birth", isError: true);
       return;
     }
-
-    final updates = <String, dynamic>{};
-
-    if (firstName != widget.data['firstName']) {
-      updates['firstName'] = firstName;
-    }
-    if (lastName != widget.data['lastName']) {
-      updates['lastName'] = lastName;
-    }
-    if (phone != widget.data['phone']) {
-      updates['phone'] = phone;
-    }
-    if (gender != widget.data['gender']) {
-      updates['gender'] = gender;
-    }
-    if (dob != null) {
-      updates['dob'] = Timestamp.fromDate(dob!);
-    }
-
-    if (updates.isEmpty) {
-      AppSnackBar.show(context, "No changes to save");
-      return;
-    }
-
-    updates['updatedAt'] = Timestamp.now();
 
     setState(() => loading = true);
 
@@ -340,7 +291,14 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       await FirebaseFirestore.instance
           .collection('users')
           .doc(widget.userId)
-          .update(updates);
+          .update({
+            "firstName": firstName,
+            "lastName": lastName,
+            "phone": phone,
+            "gender": gender,
+            if (dob != null) "dob": Timestamp.fromDate(dob!),
+            "updatedAt": Timestamp.now(),
+          });
 
       if (!mounted) return;
       Navigator.pop(context);
@@ -355,10 +313,12 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     InputDecoration decor(String label) => InputDecoration(
       labelText: label,
       filled: true,
-      fillColor: const Color(0xFFF8F9FC),
+      fillColor: cs.surfaceVariant,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -372,18 +332,23 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
         24,
         MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             "Edit Profile",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: cs.onSurface,
+            ),
           ),
           const SizedBox(height: 24),
+
           TextField(controller: firstNameCtrl, decoration: decor("First Name")),
           const SizedBox(height: 16),
           TextField(controller: lastNameCtrl, decoration: decor("Last Name")),
@@ -394,6 +359,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
             decoration: decor("Phone"),
           ),
           const SizedBox(height: 16),
+
           DropdownButtonFormField<String>(
             value: gender,
             decoration: decor("Gender"),
@@ -404,17 +370,36 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
             ],
             onChanged: (v) => setState(() => gender = v!),
           ),
+
           const SizedBox(height: 16),
 
+          // Inside _EditProfileSheetState -> build method
           GestureDetector(
             onTap: _pickDob,
             child: AbsorbPointer(
               child: TextField(
+                controller: dobCtrl,
                 decoration: decor("Date of Birth").copyWith(
-                  hintText: _formatDob(dob),
-                  suffixIcon: const HugeIcon(
-                    icon: HugeIcons.strokeRoundedCalendar01,
-                    size: 17,
+                  hintText: "Select Date of Birth",
+                  // ✅ FIXED: Correctly sized and aligned icon
+                  suffixIcon: Center(
+                    widthFactor: 1.0,
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Center(
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedCalendar01,
+                          size: 20, // Clean size
+                          color: cs.onSurfaceVariant, // Theme safe color
+                        ),
+                      ),
+                    ),
+                  ),
+                  // ✅ Constraints prevent it from stretching
+                  suffixIconConstraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
                   ),
                 ),
               ),
@@ -422,10 +407,15 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           ),
 
           const SizedBox(height: 32),
+
           FilledButton(
-            onPressed: loading ? null : _save,
+            onPressed: loading ? null : _saveProfile,
             child: loading
-                ? const CircularProgressIndicator()
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Text("Save Changes"),
           ),
         ],
@@ -435,7 +425,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 }
 
 /* =======================================================
-   SMALL UI HELPERS
+   SMALL HELPERS
 ======================================================= */
 
 class _Avatar extends StatelessWidget {
@@ -449,7 +439,7 @@ class _Avatar extends StatelessWidget {
       width: 100,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: cs.primary.withOpacity(0.1),
+        color: cs.primary.withOpacity(0.15),
       ),
       child: Center(
         child: HugeIcon(
@@ -471,7 +461,7 @@ class _RoleBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withOpacity(0.1),
+        color: colorScheme.primary.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -491,12 +481,13 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12),
+          BoxShadow(color: cs.shadow.withOpacity(0.08), blurRadius: 12),
         ],
       ),
       child: Column(children: children),
@@ -519,13 +510,15 @@ class _ProfileRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              HugeIcon(icon: icon, size: 20, color: Colors.grey),
+              HugeIcon(icon: icon, size: 20, color: cs.onSurfaceVariant),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -533,13 +526,17 @@ class _ProfileRow extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                     Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
                       ),
                     ),
                   ],
@@ -548,7 +545,7 @@ class _ProfileRow extends StatelessWidget {
             ],
           ),
         ),
-        if (!isLast) Divider(height: 1, color: Colors.grey.shade100),
+        if (!isLast) Divider(height: 1, color: cs.outlineVariant),
       ],
     );
   }

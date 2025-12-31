@@ -13,7 +13,8 @@ class StudentProgressScreen extends StatelessWidget {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
+      backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -22,10 +23,11 @@ class StudentProgressScreen extends StatelessWidget {
           "Your Progress",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
       ),
+
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('user_progress')
@@ -38,7 +40,7 @@ class StudentProgressScreen extends StatelessWidget {
           }
 
           if (!progressSnap.hasData || progressSnap.data!.docs.isEmpty) {
-            return _EmptyState(theme: theme);
+            return const _EmptyState();
           }
 
           return ListView.separated(
@@ -65,9 +67,9 @@ class StudentProgressScreen extends StatelessWidget {
   }
 }
 
-/* =======================================================
-   PROGRESS CARD (SAFE MATERIAL COUNT)
-======================================================= */
+// =======================================================
+// PROGRESS CARD (THEME SAFE)
+// =======================================================
 
 class _ProgressCard extends StatelessWidget {
   final String courseId;
@@ -112,13 +114,17 @@ class _ProgressCard extends StatelessWidget {
                     ? 0
                     : completedCount / totalMaterials;
 
+                final Color progressColor = progress == 1
+                    ? Colors.green
+                    : cs.primary;
+
                 return Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cs.surface,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: cs.shadow.withOpacity(0.08),
                         blurRadius: 16,
                         offset: const Offset(0, 4),
                       ),
@@ -129,13 +135,14 @@ class _ProgressCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // HEADER
                         Row(
                           children: [
                             Container(
                               height: 48,
                               width: 48,
                               decoration: BoxDecoration(
-                                color: cs.primary.withOpacity(0.1),
+                                color: cs.primary.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Center(
@@ -150,11 +157,11 @@ class _ProgressCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 course['title'] ?? 'Course',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2D3142),
-                                ),
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: cs.onSurface,
+                                    ),
                               ),
                             ),
                           ],
@@ -162,42 +169,43 @@ class _ProgressCard extends StatelessWidget {
 
                         const SizedBox(height: 16),
 
+                        // COUNT
                         Text(
                           "$completedCount / $totalMaterials completed",
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurfaceVariant,
+                              ),
                         ),
 
                         const SizedBox(height: 8),
 
+                        // PROGRESS BAR
                         ClipRRect(
                           borderRadius: BorderRadius.circular(6),
                           child: LinearProgressIndicator(
                             value: progress,
                             minHeight: 8,
-                            backgroundColor: Colors.grey.shade100,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              progress == 1 ? Colors.green : cs.primary,
-                            ),
+                            backgroundColor: cs.surfaceVariant,
+                            valueColor: AlwaysStoppedAnimation(progressColor),
                           ),
                         ),
 
                         const SizedBox(height: 8),
 
+                        // STATUS
                         Text(
                           progress == 1
                               ? "Completed"
                               : progress == 0
                               ? "Not started"
                               : "In progress",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: progress == 1 ? Colors.green : cs.primary,
-                          ),
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: progressColor,
+                              ),
                         ),
                       ],
                     ),
@@ -234,36 +242,39 @@ class _ProgressCard extends StatelessWidget {
   }
 }
 
-/* =======================================================
-   EMPTY STATE
-======================================================= */
+// =======================================================
+// EMPTY STATE (THEME SAFE)
+// =======================================================
 
 class _EmptyState extends StatelessWidget {
-  final ThemeData theme;
-
-  const _EmptyState({required this.theme});
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const HugeIcon(
+          HugeIcon(
             icon: HugeIcons.strokeRoundedChart01,
             size: 64,
-            color: Colors.grey,
+            color: cs.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
             "No progress yet",
-            style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             "Start learning to see your progress here",
             style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey.shade500,
+              color: cs.onSurfaceVariant,
             ),
           ),
         ],

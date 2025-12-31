@@ -26,19 +26,25 @@ class _StudentShellState extends State<StudentShell> {
   ];
 
   @override
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
+      // ✅ follow app theme
+      backgroundColor: theme.scaffoldBackgroundColor,
+
       body: IndexedStack(index: _currentIndex, children: _pages),
+
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          // ✅ use surface color (light = white, dark = dark slate)
+          color: colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              // ✅ shadow adapts better in dark mode
+              color: colorScheme.shadow.withOpacity(0.1),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
@@ -57,26 +63,31 @@ class _StudentShellState extends State<StudentShell> {
               return TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey.shade500,
+                // ✅ theme-aware inactive text
+                color: colorScheme.onSurfaceVariant,
               );
             }),
           ),
           child: NavigationBar(
             height: 70,
-            backgroundColor: Colors.white,
+
+            // ✅ theme-based background
+            backgroundColor: colorScheme.surface,
+
             elevation: 0,
             selectedIndex: _currentIndex,
-            indicatorColor: colorScheme.primary.withOpacity(0.1),
+            indicatorColor: colorScheme.primary.withOpacity(0.15),
             animationDuration: const Duration(milliseconds: 600),
+
             onDestinationSelected: (index) {
               setState(() => _currentIndex = index);
             },
+
             destinations: [
               _buildNavDest(
                 label: "Home",
                 icon: HugeIcons.strokeRoundedHome01,
-                selectedIcon: HugeIcons
-                    .strokeRoundedHome01, // Use filled version if available
+                selectedIcon: HugeIcons.strokeRoundedHome01,
                 isActive: _currentIndex == 0,
                 colorScheme: colorScheme,
               ),
@@ -117,7 +128,11 @@ class _StudentShellState extends State<StudentShell> {
     required ColorScheme colorScheme,
   }) {
     return NavigationDestination(
-      icon: HugeIcon(icon: icon, size: 24, color: Colors.grey.shade500),
+      icon: HugeIcon(
+        icon: icon,
+        size: 24,
+        color: colorScheme.onSurfaceVariant, // ✅ theme aware
+      ),
       selectedIcon: HugeIcon(
         icon: selectedIcon,
         size: 24,

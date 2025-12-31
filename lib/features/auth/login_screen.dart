@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool loading = false;
   bool hasInternet = true;
+  bool _hidePassword = true;
 
   Timer? _internetTimer;
 
@@ -192,14 +193,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 TextField(
                   controller: passCtrl,
-                  obscureText: true,
+                  obscureText: _hidePassword,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => login(),
-                  decoration: inputDecor(
-                    "Password",
-                    HugeIcons.strokeRoundedLockPassword,
-                  ),
+                  decoration:
+                      inputDecor(
+                        "Password",
+                        HugeIcons.strokeRoundedLockPassword,
+                      ).copyWith(
+                        suffixIcon: IconButton(
+                          icon: HugeIcon(
+                            icon: _hidePassword
+                                ? HugeIcons.strokeRoundedViewOff
+                                : HugeIcons.strokeRoundedView,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() => _hidePassword = !_hidePassword);
+                          },
+                        ),
+                      ),
                 ),
+
                 const SizedBox(height: 32),
 
                 FilledButton(

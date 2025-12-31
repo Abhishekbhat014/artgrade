@@ -12,7 +12,7 @@ class EditCourseScreen extends StatefulWidget {
   final String? description;
   final int? order;
   final bool active;
-  final Map<String, dynamic>? additionalDetails; // 1. Receive existing extras
+  final Map<String, dynamic>? additionalDetails;
 
   const EditCourseScreen({
     super.key,
@@ -29,7 +29,10 @@ class EditCourseScreen extends StatefulWidget {
   State<EditCourseScreen> createState() => _EditCourseScreenState();
 }
 
-// Helper class to manage dynamic controllers
+/* =======================================================
+   EXTRA FIELD MODEL
+======================================================= */
+
 class _ExtraField {
   final TextEditingController keyCtrl;
   final TextEditingController valueCtrl;
@@ -45,7 +48,6 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
   late final TextEditingController descCtrl;
   late final TextEditingController orderCtrl;
 
-  // List to hold dynamic fields
   final List<_ExtraField> _extraFields = [];
 
   bool active = true;
@@ -60,7 +62,6 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
     orderCtrl = TextEditingController(text: widget.order?.toString() ?? '');
     active = widget.active;
 
-    // 2. Populate existing extra fields into controllers
     if (widget.additionalDetails != null) {
       widget.additionalDetails!.forEach((key, value) {
         _extraFields.add(_ExtraField(key: key, value: value.toString()));
@@ -74,33 +75,17 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
     levelCtrl.dispose();
     descCtrl.dispose();
     orderCtrl.dispose();
-    // Dispose dynamic controllers
-    for (var field in _extraFields) {
-      field.keyCtrl.dispose();
-      field.valueCtrl.dispose();
+    for (final f in _extraFields) {
+      f.keyCtrl.dispose();
+      f.valueCtrl.dispose();
     }
     super.dispose();
   }
 
-  // Add a new blank row
-  void _addExtraField() {
-    setState(() {
-      _extraFields.add(_ExtraField());
-    });
-  }
+  /* =======================================================
+     SAVE
+  ======================================================= */
 
-  // Remove a specific row
-  void _removeExtraField(int index) {
-    setState(() {
-      _extraFields[index].keyCtrl.dispose();
-      _extraFields[index].valueCtrl.dispose();
-      _extraFields.removeAt(index);
-    });
-  }
-
-  // ------------------
-  // Save logic
-  // ------------------
   Future<void> _save() async {
     if (loading) return;
 
@@ -114,11 +99,10 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
       return;
     }
 
-    // 3. Convert dynamic fields back to Map
-    Map<String, dynamic> extrasMap = {};
-    for (var field in _extraFields) {
-      String key = field.keyCtrl.text.trim();
-      String value = field.valueCtrl.text.trim();
+    final Map<String, dynamic> extrasMap = {};
+    for (final field in _extraFields) {
+      final key = field.keyCtrl.text.trim();
+      final value = field.valueCtrl.text.trim();
       if (key.isNotEmpty && value.isNotEmpty) {
         extrasMap[key] = value;
       }
@@ -136,7 +120,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
             "description": desc,
             "order": order,
             "active": active,
-            "additionalDetails": extrasMap, // Save to Firestore
+            "additionalDetails": extrasMap,
             "updatedAt": Timestamp.now(),
           });
 
@@ -144,31 +128,44 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
       AppSnackBar.show(context, "Course updated successfully");
       Navigator.pop(context);
     } catch (_) {
-      if (!mounted) return;
-      AppSnackBar.show(context, "Failed to update course", isError: true);
+      if (mounted) {
+        AppSnackBar.show(context, "Failed to update course", isError: true);
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 
+  void _addExtraField() => setState(() => _extraFields.add(_ExtraField()));
+
+  void _removeExtraField(int index) {
+    _extraFields[index].keyCtrl.dispose();
+    _extraFields[index].valueCtrl.dispose();
+    setState(() => _extraFields.removeAt(index));
+  }
+
+  /* =======================================================
+     UI
+  ======================================================= */
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     InputDecoration inputDecor(String label, dynamic icon, {String? hint}) {
       return InputDecoration(
         labelText: label,
         hintText: hint,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: cs.surfaceVariant,
         prefixIcon: icon != null
             ? Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: HugeIcon(
                   icon: icon,
                   size: 20,
-                  color: Colors.grey.shade500,
+                  color: cs.onSurfaceVariant,
                 ),
               )
             : null,
@@ -180,13 +177,9 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+          borderSide: BorderSide(color: cs.primary, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 16,
@@ -197,39 +190,41 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
-          color: Colors.black87,
+          icon: HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowLeft01,
+            color: cs.onSurface,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Edit Course",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
+            constraints: const BoxConstraints(maxWidth: 520),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Standard Fields
                 TextField(
                   controller: titleCtrl,
                   decoration: inputDecor(
                     "Course Title",
                     HugeIcons.strokeRoundedCourse,
                   ),
-                  textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 16),
 
@@ -238,35 +233,18 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                   decoration: inputDecor(
                     "Level",
                     HugeIcons.strokeRoundedDiploma,
-                    hint: "e.g. Elementary",
+                    hint: "Elementary",
                   ),
-                  textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 16),
 
                 TextField(
                   controller: descCtrl,
                   maxLines: 3,
-                  decoration:
-                      inputDecor(
-                        "Description",
-                        HugeIcons.strokeRoundedNote01,
-                      ).copyWith(
-                        alignLabelWithHint: true,
-                        prefixIcon: Padding(
-                          padding: const EdgeInsets.only(
-                            left: 12,
-                            right: 12,
-                            bottom: 44,
-                          ),
-                          child: HugeIcon(
-                            icon: HugeIcons.strokeRoundedNote01,
-                            size: 20,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ),
-                  textInputAction: TextInputAction.next,
+                  decoration: inputDecor(
+                    "Description",
+                    HugeIcons.strokeRoundedNote01,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -277,7 +255,6 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                     "Sort Order",
                     HugeIcons.strokeRoundedSorting05,
                   ),
-                  textInputAction: TextInputAction.done,
                 ),
                 const SizedBox(height: 16),
 
@@ -287,35 +264,30 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cs.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: cs.outlineVariant),
                   ),
                   child: SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text(
+                    title: Text(
                       "Active Status",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
+                      style: theme.textTheme.titleMedium,
                     ),
                     subtitle: Text(
                       "Students can see this course",
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant,
                       ),
                     ),
                     value: active,
-                    activeColor: colorScheme.primary,
+                    activeColor: cs.primary,
                     onChanged: (v) => setState(() => active = v),
                   ),
                 ),
 
                 const SizedBox(height: 32),
 
-                // 4. Dynamic Fields Section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -323,7 +295,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                       "Additional Details",
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade700,
+                        color: cs.onSurface,
                       ),
                     ),
                     TextButton.icon(
@@ -333,10 +305,6 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                         size: 18,
                       ),
                       label: const Text("Add Field"),
-                      style: TextButton.styleFrom(
-                        foregroundColor: colorScheme.primary,
-                        textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
                     ),
                   ],
                 ),
@@ -346,29 +314,23 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: cs.surfaceVariant,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
                     ),
-                    child: Center(
-                      child: Text(
-                        "No extra fields added.\nTap 'Add Field' to add items like 'Duration', 'Software', etc.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 13,
-                        ),
-                      ),
+                    child: Text(
+                      "No extra fields added",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: cs.onSurfaceVariant),
                     ),
                   ),
 
                 ..._extraFields.asMap().entries.map((entry) {
-                  int index = entry.key;
-                  _ExtraField field = entry.value;
+                  final index = entry.key;
+                  final field = entry.value;
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           flex: 2,
@@ -393,14 +355,12 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 4),
                         IconButton(
-                          icon: const HugeIcon(
-                            icon: HugeIcons.strokeRoundedRemoveCircle,
-                            color: Colors.redAccent,
-                          ),
                           onPressed: () => _removeExtraField(index),
-                          tooltip: "Remove",
+                          icon: HugeIcon(
+                            icon: HugeIcons.strokeRoundedRemoveCircle,
+                            color: cs.error,
+                          ),
                         ),
                       ],
                     ),
@@ -409,27 +369,21 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
 
                 const SizedBox(height: 32),
 
-                // Save Button
                 FilledButton(
                   onPressed: loading ? null : _save,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                   child: loading
                       ? SizedBox(
                           height: 24,
                           width: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: colorScheme.onPrimary,
+                            color: cs.onPrimary,
                           ),
                         )
                       : const Text("Save Changes"),
                 ),
-                const SizedBox(height: 40), // Bottom padding
+
+                const SizedBox(height: 40),
               ],
             ),
           ),

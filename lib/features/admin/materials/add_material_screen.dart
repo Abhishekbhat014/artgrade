@@ -97,10 +97,10 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
         labelText: label,
         hintText: hint,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: cs.surfaceVariant,
         prefixIcon: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: HugeIcon(icon: icon, size: 20, color: Colors.grey.shade500),
+          child: HugeIcon(icon: icon, size: 20, color: cs.onSurfaceVariant),
         ),
         prefixIconConstraints: const BoxConstraints(
           minWidth: 44,
@@ -109,10 +109,6 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -127,6 +123,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         centerTitle: true,
         elevation: 0,
@@ -142,10 +139,11 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
           "Add Material",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3142),
+            color: cs.onSurface,
           ),
         ),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Center(
@@ -158,7 +156,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                   "Material Details",
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade700,
+                    color: cs.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -178,7 +176,7 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
                     "Material Type",
                     HugeIcons.strokeRoundedFolder02,
                   ),
-                  dropdownColor: Colors.white,
+                  dropdownColor: cs.surface,
                   items: const [
                     DropdownMenuItem(value: 'pdf', child: Text("PDF Document")),
                     DropdownMenuItem(value: 'video', child: Text("Video")),
@@ -213,6 +211,12 @@ class _AddMaterialScreenState extends State<AddMaterialScreen> {
 
                 FilledButton(
                   onPressed: loading ? null : _saveMaterial,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   child: loading
                       ? SizedBox(
                           height: 24,
