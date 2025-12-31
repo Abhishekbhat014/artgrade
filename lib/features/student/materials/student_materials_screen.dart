@@ -1,3 +1,5 @@
+import 'package:artgrade/features/student/materials/pdf_view_screen.dart';
+import 'package:artgrade/features/student/materials/video_player_screen.dart';
 import 'package:artgrade/utils/snackbar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -73,31 +75,61 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   Future<void> _handleMaterialTap({
     required String url,
     required String materialId,
+    required String type,
+    required String title,
   }) async {
     final uri = _safeUri(url);
-
     if (uri == null) {
       AppSnackBar.show(context, "Could not open material", isError: true);
       return;
     }
 
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (type == 'video') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VideoPlayerScreen(
+            videoUrl: uri.toString(),
+            title: title,
+            onCompleted: () async {
+              final uid = FirebaseAuth.instance.currentUser!.uid;
 
-      final uid = FirebaseAuth.instance.currentUser!.uid;
-      await FirebaseFirestore.instance
-          .collection('user_progress')
-          .doc(uid)
-          .collection('courses')
-          .doc(widget.courseId)
-          .set({
-            'completedMaterials': FieldValue.arrayUnion([materialId]),
-            'updatedAt': Timestamp.now(),
-          }, SetOptions(merge: true));
-    } catch (_) {
-      if (!mounted) return;
-      AppSnackBar.show(context, "Could not open material", isError: true);
+              await FirebaseFirestore.instance
+                  .collection('user_progress')
+                  .doc(uid)
+                  .collection('courses')
+                  .doc(widget.courseId)
+                  .set({
+                    'completedMaterials': FieldValue.arrayUnion([materialId]),
+                    'updatedAt': Timestamp.now(),
+                  }, SetOptions(merge: true));
+            },
+          ),
+        ),
+      );
+    } else if (type == 'pdf') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PdfViewerScreen(url: uri.toString(), title: title),
+        ),
+      );
+    } else {
+      // fallback (Excel / links)
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+
+    // Progress tracking stays SAME
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    await FirebaseFirestore.instance
+        .collection('user_progress')
+        .doc(uid)
+        .collection('courses')
+        .doc(widget.courseId)
+        .set({
+          'completedMaterials': FieldValue.arrayUnion([materialId]),
+          'updatedAt': Timestamp.now(),
+        }, SetOptions(merge: true));
   }
 
   Future<void> _downloadMaterial(String url) async {
@@ -219,7 +251,10 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       onTap: () => _handleMaterialTap(
                         url: data['url'] ?? '',
                         materialId: material.id,
+                        type: data['type'] ?? '',
+                        title: data['title'] ?? '',
                       ),
+
                       onDownload: () => _downloadMaterial(data['url'] ?? ''),
                     );
                   },

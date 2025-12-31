@@ -39,6 +39,11 @@ dependencies:
   connectivity_plus: ^7.0.0
   fl_chart:
   intl: ^0.20.2
+  http:
+  video_player:
+  flutter_pdfview:
+  path_provider:
+  chewie:
 
 dev_dependencies:
   flutter_test:
