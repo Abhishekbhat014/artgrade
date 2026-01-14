@@ -1,10 +1,9 @@
 import 'package:artgrade/features/admin/admin_shell.dart';
 import 'package:artgrade/features/student/student_shell.dart';
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hugeicons/hugeicons.dart';
-
 import '../../features/auth/login_screen.dart';
 
 class AuthGate extends StatelessWidget {
@@ -12,9 +11,6 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -28,36 +24,42 @@ class AuthGate extends StatelessWidget {
           return const LoginScreen();
         }
 
-        final uid = snapshot.data!.uid;
+        final user = snapshot.data!;
+        final uid = user.uid;
 
-        return StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(uid)
-              .snapshots(),
-          builder: (context, userSnap) {
-            if (userSnap.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
+        return KeyedSubtree(
+          key: ValueKey(uid),
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(uid)
+                .snapshots(),
+            builder: (context, userSnap) {
+              if (userSnap.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
 
-            if (!userSnap.hasData || !userSnap.data!.exists) {
-              return const Scaffold(
-                body: Center(child: Text("Setting up your account…")),
-              );
-            }
+              if (!userSnap.hasData || !userSnap.data!.exists) {
+                return const Scaffold(
+                  body: Center(child: Text("Setting up your account…")),
+                );
+              }
 
-            final data = userSnap.data!.data() as Map<String, dynamic>;
-            final role = data['role'] ?? 'student';
-            final active = data['active'] ?? true;
+              final data = userSnap.data!.data() as Map<String, dynamic>;
+              final role = data['role'] ?? 'student';
+              final active = data['active'] ?? true;
 
-            if (!active) {
-              return const _DisabledAccountScreen();
-            }
+              if (!active) {
+                return const _DisabledAccountScreen();
+              }
 
-            return role == 'admin' ? const AdminShell() : const StudentShell();
-          },
+              return role == 'admin'
+                  ? AdminShell(key: ValueKey(uid))
+                  : StudentShell(key: ValueKey(uid));
+            },
+          ),
         );
       },
     );
@@ -107,8 +109,8 @@ class _DisabledAccountScreen extends StatelessWidget {
                       color: cs.tertiary.withOpacity(0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedUserBlock01,
+                    child: AppSvgIcon(
+                      asset: AppIcons.user_block,
                       size: 48,
                       color: cs.tertiary,
                     ),

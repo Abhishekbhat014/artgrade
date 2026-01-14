@@ -1,6 +1,6 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 
 class AdminUserProgressScreen extends StatelessWidget {
@@ -26,9 +26,10 @@ class AdminUserProgressScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedArrowLeft01,
+          icon: AppSvgIcon(
+            asset: AppIcons.arrow_left,
             size: 20,
+            color: cs.onSurface,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -96,7 +97,7 @@ class AdminUserProgressScreen extends StatelessWidget {
                         child: _StatCard(
                           count: docs.length.toString(),
                           label: "Courses",
-                          icon: HugeIcons.strokeRoundedBookOpen01,
+                          asset: AppIcons.book,
                           color: Colors.blueAccent,
                         ),
                       ),
@@ -105,7 +106,7 @@ class AdminUserProgressScreen extends StatelessWidget {
                         child: _StatCard(
                           count: totalCompleted.toString(),
                           label: "Activities",
-                          icon: HugeIcons.strokeRoundedTaskDaily02,
+                          asset: AppIcons.task,
                           color: Colors.green,
                         ),
                       ),
@@ -148,18 +149,18 @@ class AdminUserProgressScreen extends StatelessWidget {
 }
 
 // ==================================================
-// STAT CARD (THEME SAFE)
+// STAT CARD (M3 COMPLIANT)
 // ==================================================
 class _StatCard extends StatelessWidget {
   final String count;
   final String label;
-  final dynamic icon;
+  final String asset;
   final Color color;
 
   const _StatCard({
     required this.count,
     required this.label,
-    required this.icon,
+    required this.asset,
     required this.color,
   });
 
@@ -167,59 +168,54 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
+    // ✅ Replaced Container with M3 Card
+    return Card(
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: AppSvgIcon(asset: asset, size: 20, color: color),
             ),
-            child: HugeIcon(icon: icon, size: 20, color: color),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                count,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: cs.onSurface,
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  count,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: cs.onSurface,
+                  ),
                 ),
-              ),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 // ==================================================
-// COURSE PROGRESS CARD (BOTTOM SAFE)
+// COURSE PROGRESS CARD (M3 COMPLIANT)
 // ==================================================
 class _CourseProgressCard extends StatelessWidget {
   final String courseId;
@@ -255,99 +251,95 @@ class _CourseProgressCard extends StatelessWidget {
             ? (completedCount / 10).clamp(0.0, 1.0)
             : 0.02;
 
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
+        // ✅ Replaced Container with M3 Card
+        return Card(
+          elevation: 2,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.shadow.withOpacity(0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    height: 48,
-                    width: 48,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: HugeIcon(
-                        icon: HugeIcons.strokeRoundedBookOpen01,
-                        size: 24,
-                        color: colorScheme.primary,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      height: 48,
+                      width: 48,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: AppSvgIcon(
+                          asset: AppIcons.book,
+                          size: 24,
+                          color: colorScheme.primary,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        if (level != null)
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            level!,
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 12,
-                              color: colorScheme.onSurfaceVariant,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
                             ),
                           ),
-                      ],
+                          if (level != null)
+                            Text(
+                              level,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    color: colorScheme.primary,
                   ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              LinearProgressIndicator(
-                value: progress,
-                minHeight: 6,
-                backgroundColor: colorScheme.surfaceContainerHighest,
-                color: colorScheme.primary,
-              ),
-
-              const SizedBox(height: 12),
-
-              Row(
-                children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedTime02,
-                    size: 14,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    lastUpdated != null
-                        ? "Last active: ${DateFormat('MMM d, h:mm a').format(lastUpdated!)}"
-                        : "No activity recorded",
-                    style: TextStyle(
-                      fontSize: 12,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    AppSvgIcon(
+                      asset: AppIcons.time,
+                      size: 14,
                       color: colorScheme.onSurfaceVariant,
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 6),
+                    Text(
+                      lastUpdated != null
+                          ? "Last active: ${DateFormat('MMM d, h:mm a').format(lastUpdated!)}"
+                          : "No activity recorded",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -368,8 +360,8 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedNotebook,
+          AppSvgIcon(
+            asset: AppIcons.progress,
             size: 64,
             color: theme.colorScheme.onSurfaceVariant,
           ),

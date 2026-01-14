@@ -1,7 +1,7 @@
 import 'dart:io';
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 
@@ -73,7 +73,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: const AppSvgIcon(asset: AppIcons.arrow_left, size: 20),
           color: cs.onSurface,
           onPressed: () => Navigator.pop(context),
         ),
@@ -132,11 +132,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedAlert02,
-                    size: 48,
-                    color: cs.error,
-                  ),
+                  AppSvgIcon(asset: AppIcons.info, size: 48, color: cs.error),
                   const SizedBox(height: 16),
                   Text(
                     errorMessage!,
@@ -148,7 +144,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                   const SizedBox(height: 24),
                   FilledButton.icon(
                     onPressed: _loadPdf,
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    icon: const AppSvgIcon(asset: AppIcons.refresh, size: 18),
                     label: const Text("Retry"),
                   ),
                 ],

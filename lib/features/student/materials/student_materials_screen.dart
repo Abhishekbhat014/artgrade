@@ -1,11 +1,13 @@
 import 'package:artgrade/features/student/materials/pdf_view_screen.dart';
 import 'package:artgrade/features/student/materials/video_player_screen.dart';
 import 'package:artgrade/utils/snackbar.dart';
+import 'package:artgrade/utils/validators.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:hugeicons/hugeicons.dart';
+
+import '../../../widgets/app_svg_icon.dart';
 
 class MaterialsScreen extends StatefulWidget {
   final String courseId;
@@ -33,23 +35,96 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   }
 
   Uri? _safeUri(String url) {
-    final trimmed = url.trim();
-    if (trimmed.isEmpty) return null;
+    final cleaned = url.trim().replaceAll(RegExp(r'\s+'), '');
+    if (cleaned.isEmpty) return null;
 
-    if (trimmed.contains('drive.google.com/file/d/')) {
-      final reg = RegExp(r'/d/([^/]+)');
-      final match = reg.firstMatch(trimmed);
+    if (cleaned.contains('drive.google.com')) {
+      final match = RegExp(r'/d/([^/]+)').firstMatch(cleaned);
       if (match != null) {
-        final id = match.group(1);
-        return Uri.parse('https://drive.google.com/uc?export=download&id=$id');
+        final fileId = match.group(1);
+        return Uri.parse(
+          'https://drive.google.com/uc?export=download&id=$fileId',
+        );
       }
     }
+    return null;
+  }
 
-    if (!trimmed.startsWith('http')) {
-      return Uri.parse('https://$trimmed');
+  Future<void> _handleMaterialTap({
+    required String url,
+    required String materialId,
+    required String type,
+    required String title,
+  }) async {
+    final uri = _safeUri(url);
+
+    if (uri == null || !Validators.isValidNetworkUri(uri)) {
+      if (mounted) {
+        AppSnackBar.show(
+          context,
+          "This material link is broken or invalid",
+          isError: true,
+        );
+      }
+      return;
     }
 
-    return Uri.parse(trimmed);
+    try {
+      if (type == 'video') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VideoPlayerScreen(
+              videoUrl: uri.toString(),
+              title: title,
+              onCompleted: () => _markAsCompleted(materialId),
+            ),
+          ),
+        );
+      } else if (type == 'pdf') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PdfViewerScreen(url: uri.toString(), title: title),
+          ),
+        );
+      } else {
+        final launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+
+        if (!launched) {
+          throw const FormatException('Launch failed');
+        }
+      }
+
+      _markAsCompleted(materialId);
+    } catch (e, s) {
+      debugPrint("Material open failed: $e");
+      debugPrintStack(stackTrace: s);
+
+      if (mounted) {
+        AppSnackBar.show(
+          context,
+          "Material is unavailable or your connection failed",
+          isError: true,
+        );
+      }
+    }
+  }
+
+  Future<void> _markAsCompleted(String materialId) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    await FirebaseFirestore.instance
+        .collection('user_progress')
+        .doc(uid)
+        .collection('courses')
+        .doc(widget.courseId)
+        .set({
+          'completedMaterials': FieldValue.arrayUnion([materialId]),
+          'updatedAt': Timestamp.now(),
+        }, SetOptions(merge: true));
   }
 
   void _listenUserProgress() {
@@ -70,66 +145,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             });
           }
         });
-  }
-
-  Future<void> _handleMaterialTap({
-    required String url,
-    required String materialId,
-    required String type,
-    required String title,
-  }) async {
-    final uri = _safeUri(url);
-    if (uri == null) {
-      AppSnackBar.show(context, "Could not open material", isError: true);
-      return;
-    }
-
-    if (type == 'video') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => VideoPlayerScreen(
-            videoUrl: uri.toString(),
-            title: title,
-            onCompleted: () async {
-              final uid = FirebaseAuth.instance.currentUser!.uid;
-
-              await FirebaseFirestore.instance
-                  .collection('user_progress')
-                  .doc(uid)
-                  .collection('courses')
-                  .doc(widget.courseId)
-                  .set({
-                    'completedMaterials': FieldValue.arrayUnion([materialId]),
-                    'updatedAt': Timestamp.now(),
-                  }, SetOptions(merge: true));
-            },
-          ),
-        ),
-      );
-    } else if (type == 'pdf') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PdfViewerScreen(url: uri.toString(), title: title),
-        ),
-      );
-    } else {
-      // fallback (Excel / links)
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-
-    // Progress tracking stays SAME
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    await FirebaseFirestore.instance
-        .collection('user_progress')
-        .doc(uid)
-        .collection('courses')
-        .doc(widget.courseId)
-        .set({
-          'completedMaterials': FieldValue.arrayUnion([materialId]),
-          'updatedAt': Timestamp.now(),
-        }, SetOptions(merge: true));
   }
 
   Future<void> _downloadMaterial(String url) async {
@@ -157,12 +172,13 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
 
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: HugeIcon(
-            icon: HugeIcons.strokeRoundedArrowLeft01,
+          icon: AppSvgIcon(
+            asset: AppIcons.arrow_left,
             size: 20,
             color: cs.onSurface,
           ),
@@ -233,7 +249,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                  // ✅ Bottom padding to clear floating elements if any
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                   itemCount: materials.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
@@ -254,7 +271,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         type: data['type'] ?? '',
                         title: data['title'] ?? '',
                       ),
-
                       onDownload: () => _downloadMaterial(data['url'] ?? ''),
                     );
                   },
@@ -269,7 +285,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
 }
 
 // ==================================================
-// MATERIAL CARD (THEME SAFE)
+// ✅ M3 COMPLIANT MATERIAL CARD
 // ==================================================
 class _MaterialCard extends StatelessWidget {
   final String title;
@@ -290,152 +306,147 @@ class _MaterialCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    dynamic icon;
+    String asset;
     Color accent;
     String label;
 
     switch (type.toLowerCase()) {
       case 'pdf':
-        icon = HugeIcons.strokeRoundedPdf02;
+        asset = AppIcons.pdf;
         accent = cs.error;
         label = "PDF Document";
         break;
       case 'video':
-        icon = HugeIcons.strokeRoundedVideoReplay;
+        asset = AppIcons.video;
         accent = cs.primary;
         label = "Video Lecture";
         break;
       case 'excel':
-        icon = HugeIcons.strokeRoundedFile01;
+        asset = AppIcons.folder;
         accent = cs.tertiary;
         label = "Excel Sheet";
         break;
       default:
-        icon = HugeIcons.strokeRoundedLink02;
+        asset = AppIcons.link;
         accent = cs.secondary;
         label = "External Link";
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // ICON
-                Container(
-                  height: 52,
-                  width: 52,
-                  decoration: BoxDecoration(
-                    color: accent.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Center(
-                    child: HugeIcon(icon: icon, size: 26, color: accent),
-                  ),
+    // ✅ Using Standard M3 Card
+    return Card(
+      elevation: 2, // M3 Elevation
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // ICON
+              Container(
+                height: 52,
+                width: 52,
+                decoration: BoxDecoration(
+                  color: accent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
+                child: Center(
+                  child: AppSvgIcon(asset: asset, size: 26, color: accent),
+                ),
+              ),
 
-                const SizedBox(width: 16),
+              const SizedBox(width: 16),
 
-                // INFO
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: cs.onSurface,
-                        ),
+              // INFO
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: cs.onSurface,
                       ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          if (isCompleted) ...[
-                            HugeIcon(
-                              icon: HugeIcons.strokeRoundedCheckmarkCircle01,
-                              size: 14,
-                              color: Colors.green,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "Completed",
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.green,
-                                  ),
-                            ),
-                            Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 8),
-                              width: 3,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: cs.onSurfaceVariant,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (isCompleted) ...[
+                          AppSvgIcon(
+                            asset: AppIcons.checkmark,
+                            size: 14,
+                            color: Colors.green,
+                          ),
+                          const SizedBox(width: 4),
                           Text(
+                            "Completed",
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                          ),
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            width: 3,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: cs.onSurfaceVariant,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ],
+                        // Label text (PDF Document, etc.)
+                        Flexible(
+                          child: Text(
                             label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(color: cs.onSurfaceVariant),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ACTIONS
-                const SizedBox(width: 12),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: onDownload,
-                      behavior: HitTestBehavior.opaque,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: cs.surfaceVariant,
-                          shape: BoxShape.circle,
                         ),
-                        child: HugeIcon(
-                          icon: HugeIcons.strokeRoundedDownload01,
-                          size: 18,
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    HugeIcon(
-                      icon: HugeIcons.strokeRoundedArrowRight01,
-                      size: 20,
-                      color: cs.onSurfaceVariant,
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+
+              // ACTIONS
+              const SizedBox(width: 12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: onDownload,
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceVariant,
+                        shape: BoxShape.circle,
+                      ),
+                      child: AppSvgIcon(
+                        asset: AppIcons.download,
+                        size: 18,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  AppSvgIcon(
+                    asset: AppIcons.arrow_right,
+                    size: 20,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -455,8 +466,8 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedFolder02,
+          AppSvgIcon(
+            asset: AppIcons.folder,
             size: 64,
             color: cs.onSurfaceVariant,
           ),
@@ -482,11 +493,7 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedAlertCircle,
-            size: 48,
-            color: cs.error,
-          ),
+          AppSvgIcon(asset: AppIcons.info, size: 48, color: cs.error),
           const SizedBox(height: 16),
           Text(
             "Failed to load materials",

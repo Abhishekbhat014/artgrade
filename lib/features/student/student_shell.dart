@@ -1,10 +1,9 @@
 import 'package:artgrade/features/student/profile/student_profile_screen.dart';
 import 'package:artgrade/features/student/progress/student_progress_screen.dart';
 import 'package:artgrade/features/student/student_course_navigator.dart';
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
-// Import your actual Home Screen
 import 'student_home.dart';
 
 class StudentShell extends StatefulWidget {
@@ -17,7 +16,6 @@ class StudentShell extends StatefulWidget {
 class _StudentShellState extends State<StudentShell> {
   int _currentIndex = 0;
 
-  // Define your pages here
   late final List<Widget> _pages = [
     const StudentHome(),
     const StudentCoursesNavigator(),
@@ -26,119 +24,147 @@ class _StudentShellState extends State<StudentShell> {
   ];
 
   @override
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      // ✅ follow app theme
       backgroundColor: theme.scaffoldBackgroundColor,
 
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      // ✅ 1. Extend body so content scrolls behind the navbar
+      extendBody: true,
 
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          // ✅ use surface color (light = white, dark = dark slate)
-          color: colorScheme.surface,
-          boxShadow: [
-            BoxShadow(
-              // ✅ shadow adapts better in dark mode
-              color: colorScheme.shadow.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: NavigationBarTheme(
-          data: NavigationBarThemeData(
-            labelTextStyle: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected)) {
-                return TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
-                );
-              }
-              return TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                // ✅ theme-aware inactive text
-                color: colorScheme.onSurfaceVariant,
-              );
-            }),
+      body: Theme(
+        data: theme.copyWith(
+          appBarTheme: theme.appBarTheme.copyWith(
+            scrolledUnderElevation: 0,
+            surfaceTintColor: Colors.transparent,
           ),
-          child: NavigationBar(
+        ),
+        child: IndexedStack(index: _currentIndex, children: _pages),
+      ),
+
+      // ✅ 2. Floating Navbar (M3 Material Widget)
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+        child: Material(
+          // ✅ High Elevation: Adds Shadow (Light) & Surface Tint (Dark)
+          elevation: 12,
+
+          // ✅ Standard Shadow Color
+          shadowColor: Colors.black.withOpacity(0.4),
+
+          // ✅ Round Corners
+          borderRadius: BorderRadius.circular(15),
+
+          // ✅ Use Card Theme Color: Lighter than Scaffold in Dark Mode
+          color: theme.cardTheme.color,
+
+          child: Container(
             height: 70,
-
-            // ✅ theme-based background
-            backgroundColor: colorScheme.surface,
-
-            elevation: 0,
-            selectedIndex: _currentIndex,
-            indicatorColor: colorScheme.primary.withOpacity(0.15),
-            animationDuration: const Duration(milliseconds: 600),
-
-            onDestinationSelected: (index) {
-              setState(() => _currentIndex = index);
-            },
-
-            destinations: [
-              _buildNavDest(
-                label: "Home",
-                icon: HugeIcons.strokeRoundedHome01,
-                selectedIcon: HugeIcons.strokeRoundedHome01,
-                isActive: _currentIndex == 0,
-                colorScheme: colorScheme,
-              ),
-              _buildNavDest(
-                label: "Courses",
-                icon: HugeIcons.strokeRoundedBookOpen01,
-                selectedIcon: HugeIcons.strokeRoundedBookOpen01,
-                isActive: _currentIndex == 1,
-                colorScheme: colorScheme,
-              ),
-              _buildNavDest(
-                label: "Progress",
-                icon: HugeIcons.strokeRoundedChart01,
-                selectedIcon: HugeIcons.strokeRoundedChart01,
-                isActive: _currentIndex == 2,
-                colorScheme: colorScheme,
-              ),
-              _buildNavDest(
-                label: "Profile",
-                icon: HugeIcons.strokeRoundedUser,
-                selectedIcon: HugeIcons.strokeRoundedUser,
-                isActive: _currentIndex == 3,
-                colorScheme: colorScheme,
-              ),
-            ],
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _NavBarItem(
+                  asset: AppIcons.home,
+                  label: "HOME",
+                  isSelected: _currentIndex == 0,
+                  onTap: () => setState(() => _currentIndex = 0),
+                  colorScheme: colorScheme,
+                ),
+                _NavBarItem(
+                  asset: AppIcons.book,
+                  label: "COURSE",
+                  isSelected: _currentIndex == 1,
+                  onTap: () => setState(() => _currentIndex = 1),
+                  colorScheme: colorScheme,
+                ),
+                _NavBarItem(
+                  asset: AppIcons.progress,
+                  label: "PROGRESS",
+                  isSelected: _currentIndex == 2,
+                  onTap: () => setState(() => _currentIndex = 2),
+                  colorScheme: colorScheme,
+                ),
+                _NavBarItem(
+                  asset: AppIcons.user,
+                  label: "PROFILE",
+                  isSelected: _currentIndex == 3,
+                  onTap: () => setState(() => _currentIndex = 3),
+                  colorScheme: colorScheme,
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  // Helper to build consistent navigation destinations
-  NavigationDestination _buildNavDest({
-    required String label,
-    required dynamic icon,
-    required dynamic selectedIcon,
-    required bool isActive,
-    required ColorScheme colorScheme,
-  }) {
-    return NavigationDestination(
-      icon: HugeIcon(
-        icon: icon,
-        size: 24,
-        color: colorScheme.onSurfaceVariant, // ✅ theme aware
+// ✅ Custom Item Widget (Chip Style)
+class _NavBarItem extends StatelessWidget {
+  final String asset;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final ColorScheme colorScheme;
+
+  const _NavBarItem({
+    required this.asset,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutQuad,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 16 : 12,
+          vertical: 12,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primary.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppSvgIcon(
+              asset: asset,
+              size: 24,
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant.withOpacity(0.6),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
-      selectedIcon: HugeIcon(
-        icon: selectedIcon,
-        size: 24,
-        color: colorScheme.primary,
-      ),
-      label: label,
     );
   }
 }

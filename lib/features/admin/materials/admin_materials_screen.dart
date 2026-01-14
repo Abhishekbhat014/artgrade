@@ -1,7 +1,6 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hugeicons/hugeicons.dart';
-
 import 'add_material_screen.dart';
 import 'edit_material_screen.dart';
 
@@ -30,7 +29,7 @@ class AdminMaterialsScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
+          icon: AppSvgIcon(asset: AppIcons.arrow_left, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -60,10 +59,10 @@ class AdminMaterialsScreen extends StatelessWidget {
                 color: cs.primary,
                 shape: BoxShape.circle,
               ),
-              child: HugeIcon(
-                icon: HugeIcons.strokeRoundedAdd01,
+              child: AppSvgIcon(
+                asset: AppIcons.plus,
                 size: 20,
-                color: Colors.black,
+                color: cs.onPrimary, // Ensure high contrast
               ),
             ),
           ),
@@ -73,15 +72,20 @@ class AdminMaterialsScreen extends StatelessWidget {
 
       body: Column(
         children: [
-          // Context Header
+          // Context Header (M3 Style)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-            color: cs.surface,
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withOpacity(0.5),
+              border: Border(
+                bottom: BorderSide(color: cs.outlineVariant.withOpacity(0.5)),
+              ),
+            ),
             child: Row(
               children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedLayers01,
+                AppSvgIcon(
+                  asset: AppIcons.subject,
                   size: 16,
                   color: cs.onSurfaceVariant,
                 ),
@@ -125,7 +129,8 @@ class AdminMaterialsScreen extends StatelessWidget {
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.all(20),
+                  // ✅ Bottom Padding for Floating Navbar
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
                   itemCount: docs.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
@@ -157,8 +162,8 @@ class AdminMaterialsScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedFolder02,
+          AppSvgIcon(
+            asset: AppIcons.folder,
             size: 64,
             color: cs.onSurfaceVariant,
           ),
@@ -186,7 +191,7 @@ class AdminMaterialsScreen extends StatelessWidget {
 }
 
 // --------------------------------------------------
-// MATERIAL CARD (THEME SAFE)
+// MATERIAL CARD (M3 COMPLIANT)
 // --------------------------------------------------
 
 class _MaterialCard extends StatelessWidget {
@@ -208,127 +213,13 @@ class _MaterialCard extends StatelessWidget {
     required this.order,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    dynamic icon;
-    Color color;
-    String label;
-
-    switch (type) {
-      case 'pdf':
-        icon = HugeIcons.strokeRoundedPdf02;
-        color = Colors.redAccent;
-        label = "PDF Document";
-        break;
-      case 'video':
-        icon = HugeIcons.strokeRoundedVideoReplay;
-        color = Colors.blueAccent;
-        label = "Video Lecture";
-        break;
-      default:
-        icon = HugeIcons.strokeRoundedLink02;
-        color = Colors.green;
-        label = "External Link";
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              height: 52,
-              width: 52,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Center(
-                child: HugeIcon(icon: icon, size: 26, color: color),
-              ),
-            ),
-            const SizedBox(width: 16),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: cs.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    label,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => EditMaterialScreen(
-                      courseId: courseId,
-                      subjectId: subjectId,
-                      materialId: materialId,
-                      title: title,
-                      type: type,
-                      url: url,
-                      order: order,
-                    ),
-                  ),
-                );
-              },
-              icon: HugeIcon(
-                icon: HugeIcons.strokeRoundedPencilEdit02,
-                size: 20,
-                color: cs.primary,
-              ),
-            ),
-
-            IconButton(
-              onPressed: () => _delete(context),
-              icon: const HugeIcon(
-                icon: HugeIcons.strokeRoundedDelete02,
-                size: 20,
-                color: Colors.redAccent,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _delete(BuildContext context) async {
     final cs = Theme.of(context).colorScheme;
 
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text("Delete Material"),
         content: const Text("This will permanently delete this material."),
         actions: [
@@ -355,5 +246,114 @@ class _MaterialCard extends StatelessWidget {
           .doc(materialId)
           .delete();
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    String asset;
+    Color color;
+    String label;
+
+    switch (type) {
+      case 'pdf':
+        asset = AppIcons.pdf;
+        color = cs.error;
+        label = "PDF Document";
+        break;
+      case 'video':
+        asset = AppIcons.video;
+        color = cs.primary;
+        label = "Video Lecture";
+        break;
+      default:
+        asset = AppIcons.link;
+        color = Colors.green;
+        label = "External Link";
+    }
+
+    // ✅ Standard M3 Card (Theme handles shadow/tint)
+    return Card(
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              height: 52,
+              width: 52,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Center(
+                child: AppSvgIcon(asset: asset, size: 26, color: color),
+              ),
+            ),
+            const SizedBox(width: 16),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EditMaterialScreen(
+                      courseId: courseId,
+                      subjectId: subjectId,
+                      materialId: materialId,
+                      title: title,
+                      type: type,
+                      url: url,
+                      order: order,
+                    ),
+                  ),
+                );
+              },
+              icon: AppSvgIcon(
+                asset: AppIcons.edit,
+                size: 20,
+                color: cs.primary,
+              ),
+            ),
+
+            IconButton(
+              onPressed: () => _delete(context),
+              icon: AppSvgIcon(
+                asset: AppIcons.delete,
+                size: 20,
+                color: cs.error,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

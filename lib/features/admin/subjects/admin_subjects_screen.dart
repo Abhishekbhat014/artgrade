@@ -1,7 +1,6 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hugeicons/hugeicons.dart';
-
 import 'add_subject_screen.dart';
 import 'edit_subject_screen.dart';
 import '../materials/admin_materials_screen.dart';
@@ -29,11 +28,7 @@ class AdminSubjectsScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: HugeIcon(
-            icon: HugeIcons.strokeRoundedArrowLeft01,
-            size: 20,
-            color: cs.onSurface,
-          ),
+          icon: AppSvgIcon(asset: AppIcons.arrow_left, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -60,10 +55,10 @@ class AdminSubjectsScreen extends StatelessWidget {
                 color: cs.primary,
                 shape: BoxShape.circle,
               ),
-              child: HugeIcon(
-                icon: HugeIcons.strokeRoundedAdd01,
-                color: cs.onPrimary,
+              child: AppSvgIcon(
+                asset: AppIcons.plus,
                 size: 20,
+                color: cs.onPrimary, // Ensure contrast
               ),
             ),
           ),
@@ -74,16 +69,21 @@ class AdminSubjectsScreen extends StatelessWidget {
       body: Column(
         children: [
           // --------------------------------------------------
-          // COURSE CONTEXT HEADER
+          // COURSE CONTEXT HEADER (M3 Style)
           // --------------------------------------------------
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-            color: cs.surface,
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withOpacity(0.5),
+              border: Border(
+                bottom: BorderSide(color: cs.outlineVariant.withOpacity(0.5)),
+              ),
+            ),
             child: Row(
               children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedBook01,
+                AppSvgIcon(
+                  asset: AppIcons.book,
                   size: 16,
                   color: cs.onSurfaceVariant,
                 ),
@@ -128,7 +128,8 @@ class AdminSubjectsScreen extends StatelessWidget {
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.all(20),
+                  // ✅ Bottom Padding for Floating Navbar
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
                   itemCount: docs.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
@@ -184,8 +185,8 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedLayers01,
+          AppSvgIcon(
+            asset: AppIcons.subject,
             size: 64,
             color: cs.onSurfaceVariant,
           ),
@@ -220,7 +221,7 @@ class _ErrorState extends StatelessWidget {
 }
 
 /* =======================================================
-   SUBJECT CARD
+   SUBJECT CARD (M3 COMPLIANT)
 ======================================================= */
 
 class _SubjectCard extends StatelessWidget {
@@ -282,70 +283,60 @@ class _SubjectCard extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onOpen,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SubjectHeader(title: title, subtitle: subtitle),
-                const SizedBox(height: 16),
-                Divider(height: 1, color: cs.outlineVariant),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Spacer(),
-                    IconButton(
-                      tooltip: 'Edit',
-                      icon: HugeIcon(
-                        icon: HugeIcons.strokeRoundedPencilEdit02,
-                        size: 20,
-                        color: cs.primary,
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => EditSubjectScreen(
-                              courseId: courseId,
-                              subjectId: subjectId,
-                              title: title,
-                              subtitle: subtitle,
-                              additionalDetails: additionalDetails,
-                            ),
+    // ✅ Standard M3 Card (Theme handles shadow/tint)
+    return Card(
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SubjectHeader(title: title, subtitle: subtitle),
+              const SizedBox(height: 16),
+              Divider(height: 1, color: cs.outlineVariant.withOpacity(0.5)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Spacer(),
+                  IconButton(
+                    tooltip: 'Edit',
+                    icon: AppSvgIcon(
+                      asset: AppIcons.edit,
+                      size: 20,
+                      color: cs.primary,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditSubjectScreen(
+                            courseId: courseId,
+                            subjectId: subjectId,
+                            title: title,
+                            subtitle: subtitle,
+                            additionalDetails: additionalDetails,
                           ),
-                        );
-                      },
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    tooltip: 'Delete',
+                    icon: AppSvgIcon(
+                      asset: AppIcons.delete,
+                      size: 20,
+                      color: cs.error,
                     ),
-                    IconButton(
-                      tooltip: 'Delete',
-                      icon: HugeIcon(
-                        icon: HugeIcons.strokeRoundedDelete02,
-                        size: 20,
-                        color: cs.error,
-                      ),
-                      onPressed: () => _deleteSubject(context),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                    onPressed: () => _deleteSubject(context),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -354,7 +345,7 @@ class _SubjectCard extends StatelessWidget {
 }
 
 /* =======================================================
-   SUBJECT HEADER
+   SUBJECT HEADER (M3 COMPLIANT)
 ======================================================= */
 
 class _SubjectHeader extends StatelessWidget {
@@ -375,14 +366,14 @@ class _SubjectHeader extends StatelessWidget {
           height: 48,
           width: 48,
           decoration: BoxDecoration(
-            color: cs.secondary.withOpacity(0.12),
+            color: cs.secondaryContainer,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Center(
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedLayers01,
+            child: AppSvgIcon(
+              asset: AppIcons.subject,
               size: 24,
-              color: cs.secondary,
+              color: cs.onSecondaryContainer,
             ),
           ),
         ),

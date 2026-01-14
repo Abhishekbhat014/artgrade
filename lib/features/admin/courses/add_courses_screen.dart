@@ -1,7 +1,6 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hugeicons/hugeicons.dart';
-
 import 'package:artgrade/utils/snackbar.dart';
 import 'package:artgrade/utils/validators.dart';
 
@@ -37,7 +36,7 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
 
   /* =======================================================
      EXTRA FIELDS HANDLING
-  ======================================================= */
+   ======================================================= */
 
   void _addExtraField() {
     setState(() => _extraFields.add(_ExtraField()));
@@ -51,7 +50,7 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
 
   /* =======================================================
      SAVE COURSE
-  ======================================================= */
+   ======================================================= */
 
   Future<void> _saveCourse() async {
     if (loading) return;
@@ -147,60 +146,55 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
   }
 
   /* =======================================================
-     UI
-  ======================================================= */
+     UI (M3 Styled)
+   ======================================================= */
+
+  InputDecoration _inputDecor(
+    String label,
+    String asset, {
+    String? hint,
+    required ColorScheme cs,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      labelStyle: TextStyle(color: cs.onSurfaceVariant),
+      hintStyle: TextStyle(color: cs.onSurfaceVariant.withOpacity(0.5)),
+      filled: true,
+      fillColor: cs.surfaceContainerHighest.withOpacity(0.5),
+      prefixIcon: Padding(
+        padding: const EdgeInsets.only(left: 16, right: 12),
+        child: AppSvgIcon(asset: asset, size: 22, color: cs.onSurfaceVariant),
+      ),
+      prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: cs.primary, width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    InputDecoration inputDecor(String label, dynamic icon, {String? hint}) {
-      return InputDecoration(
-        labelText: label,
-        hintText: hint,
-        filled: true,
-        fillColor: cs.surfaceVariant,
-        prefixIcon: icon != null
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: HugeIcon(
-                  icon: icon,
-                  size: 20,
-                  color: cs.onSurfaceVariant,
-                ),
-              )
-            : null,
-        prefixIconConstraints: const BoxConstraints(
-          minWidth: 44,
-          minHeight: 44,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.primary, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 16,
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-
       appBar: AppBar(
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: HugeIcon(
-            icon: HugeIcons.strokeRoundedArrowLeft01,
+          icon: AppSvgIcon(
+            asset: AppIcons.arrow_left,
             color: cs.onSurface,
+            size: 22,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -212,7 +206,6 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
           ),
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Center(
@@ -223,9 +216,11 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
               children: [
                 TextField(
                   controller: _titleCtrl,
-                  decoration: inputDecor(
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor(
                     "Course Title",
-                    HugeIcons.strokeRoundedCourse,
+                    AppIcons.title,
+                    cs: cs,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -233,18 +228,22 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                 TextField(
                   controller: _descCtrl,
                   maxLines: 3,
-                  decoration: inputDecor(
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor(
                     "Description",
-                    HugeIcons.strokeRoundedNote01,
+                    AppIcons.description,
+                    cs: cs,
                   ),
                 ),
                 const SizedBox(height: 16),
 
                 TextField(
                   controller: _slugCtrl,
-                  decoration: inputDecor(
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor(
                     "Course ID (Unique Slug)",
-                    HugeIcons.strokeRoundedIdentityCard,
+                    AppIcons.id,
+                    cs: cs,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -252,9 +251,11 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                 TextField(
                   controller: _orderCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: inputDecor(
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor(
                     "Display Order",
-                    HugeIcons.strokeRoundedSorting05,
+                    AppIcons.order,
+                    cs: cs,
                   ),
                 ),
 
@@ -272,11 +273,18 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                     ),
                     TextButton.icon(
                       onPressed: _addExtraField,
-                      icon: const HugeIcon(
-                        icon: HugeIcons.strokeRoundedAdd01,
+                      icon: AppSvgIcon(
+                        asset: AppIcons.plus,
                         size: 18,
+                        color: cs.primary,
                       ),
-                      label: const Text("Add Field"),
+                      label: Text(
+                        "Add Field",
+                        style: TextStyle(
+                          color: cs.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -285,15 +293,31 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
 
                 if (_extraFields.isEmpty)
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: cs.surfaceVariant,
-                      borderRadius: BorderRadius.circular(12),
+                      color: cs.surfaceContainerHighest.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: cs.outlineVariant.withOpacity(0.5),
+                      ),
                     ),
-                    child: Text(
-                      "No extra fields added",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: cs.onSurfaceVariant),
+                    child: Column(
+                      children: [
+                        AppSvgIcon(
+                          asset: AppIcons.info,
+                          size: 32,
+                          color: cs.onSurfaceVariant.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "No extra fields added",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
@@ -309,10 +333,12 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                           flex: 2,
                           child: TextField(
                             controller: field.keyCtrl,
-                            decoration: inputDecor(
+                            style: TextStyle(color: cs.onSurface),
+                            decoration: _inputDecor(
                               "Label",
-                              null,
+                              AppIcons.label,
                               hint: "Duration",
+                              cs: cs,
                             ),
                           ),
                         ),
@@ -321,17 +347,20 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                           flex: 3,
                           child: TextField(
                             controller: field.valueCtrl,
-                            decoration: inputDecor(
+                            style: TextStyle(color: cs.onSurface),
+                            decoration: _inputDecor(
                               "Value",
-                              null,
+                              AppIcons.blur,
                               hint: "4 Weeks",
+                              cs: cs,
                             ),
                           ),
                         ),
                         IconButton(
                           onPressed: () => _removeExtraField(index),
-                          icon: HugeIcon(
-                            icon: HugeIcons.strokeRoundedRemoveCircle,
+                          icon: AppSvgIcon(
+                            asset: AppIcons.remove,
+                            size: 24,
                             color: cs.error,
                           ),
                         ),
@@ -344,6 +373,12 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
 
                 FilledButton(
                   onPressed: loading ? null : _saveCourse,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                   child: loading
                       ? SizedBox(
                           height: 24,
@@ -353,8 +388,15 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
                             color: cs.onPrimary,
                           ),
                         )
-                      : const Text("Save Course"),
+                      : const Text(
+                          "Save Course",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
+                const SizedBox(height: 24),
               ],
             ),
           ),

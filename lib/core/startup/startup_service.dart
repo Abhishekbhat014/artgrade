@@ -22,8 +22,16 @@ class StartupService {
       return AppStartDestination.login;
     }
 
-    final data = snap.data()!;
-    final role = data['role'] ?? 'student';
+    final data = snap.data();
+    if (data == null) {
+      return AppStartDestination.login;
+    }
+
+    final role = data['role'];
+    if (role != 'admin' && role != 'student') {
+      return AppStartDestination.login;
+    }
+
     final active = data['active'] ?? true;
 
     // Optional safety: inactive user forced logout

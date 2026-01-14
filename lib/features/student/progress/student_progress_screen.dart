@@ -1,7 +1,7 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 class StudentProgressScreen extends StatelessWidget {
   const StudentProgressScreen({super.key});
@@ -16,6 +16,7 @@ class StudentProgressScreen extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
 
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -44,7 +45,8 @@ class StudentProgressScreen extends StatelessWidget {
           }
 
           return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+            // ✅ Bottom padding for Floating Navbar
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
             itemCount: progressSnap.data!.docs.length,
             separatorBuilder: (_, __) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
@@ -68,7 +70,7 @@ class StudentProgressScreen extends StatelessWidget {
 }
 
 // =======================================================
-// PROGRESS CARD (THEME SAFE)
+// ✅ M3 COMPLIANT PROGRESS CARD
 // =======================================================
 
 class _ProgressCard extends StatelessWidget {
@@ -118,18 +120,10 @@ class _ProgressCard extends StatelessWidget {
                     ? Colors.green
                     : cs.primary;
 
-                return Container(
-                  decoration: BoxDecoration(
-                    color: cs.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: cs.shadow.withOpacity(0.08),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
+                // ✅ Using Standard Card (M3 Standard)
+                return Card(
+                  elevation: 2, // Standard elevation for lists
+                  margin: EdgeInsets.zero,
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -146,8 +140,8 @@ class _ProgressCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Center(
-                                child: HugeIcon(
-                                  icon: HugeIcons.strokeRoundedChart01,
+                                child: AppSvgIcon(
+                                  asset: AppIcons.progress,
                                   size: 24,
                                   color: cs.primary,
                                 ),
@@ -187,7 +181,7 @@ class _ProgressCard extends StatelessWidget {
                           child: LinearProgressIndicator(
                             value: progress,
                             minHeight: 8,
-                            backgroundColor: cs.surfaceVariant,
+                            backgroundColor: cs.surfaceContainerHighest,
                             valueColor: AlwaysStoppedAnimation(progressColor),
                           ),
                         ),
@@ -243,7 +237,7 @@ class _ProgressCard extends StatelessWidget {
 }
 
 // =======================================================
-// EMPTY STATE (THEME SAFE)
+// EMPTY STATE
 // =======================================================
 
 class _EmptyState extends StatelessWidget {
@@ -258,10 +252,10 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedChart01,
+          AppSvgIcon(
+            asset: AppIcons.progress,
             size: 64,
-            color: cs.onSurfaceVariant,
+            color: cs.onSurfaceVariant.withOpacity(0.5),
           ),
           const SizedBox(height: 16),
           Text(

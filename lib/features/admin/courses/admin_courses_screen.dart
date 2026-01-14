@@ -1,7 +1,6 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hugeicons/hugeicons.dart';
-
 import 'add_courses_screen.dart';
 import 'edit_course_screen.dart';
 import '../subjects/admin_subjects_screen.dart';
@@ -43,7 +42,11 @@ class AdminCoursesScreen extends StatelessWidget {
                 color: cs.primary,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.add, color: cs.onPrimary, size: 20),
+              child: AppSvgIcon(
+                asset: AppIcons.plus,
+                color: cs.onPrimary, // Ensure contrast on primary
+                size: 20,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -71,7 +74,8 @@ class AdminCoursesScreen extends StatelessWidget {
           }
 
           return ListView.separated(
-            padding: const EdgeInsets.all(20),
+            // ✅ Bottom padding for floating navbar
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
             itemCount: docs.length,
             separatorBuilder: (_, __) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
@@ -113,8 +117,8 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedBookOpen01,
+          AppSvgIcon(
+            asset: AppIcons.book,
             size: 64,
             color: cs.onSurfaceVariant,
           ),
@@ -149,7 +153,7 @@ class _ErrorState extends StatelessWidget {
 }
 
 /* =======================================================
-   COURSE CARD
+   COURSE CARD (M3 COMPLIANT)
 ======================================================= */
 
 class _CourseCard extends StatelessWidget {
@@ -208,89 +212,79 @@ class _CourseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
+    // ✅ Using Standard M3 Card (No manual BoxShadow)
+    return Card(
+      elevation: 2, // M3 Elevation
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    AdminSubjectsScreen(courseId: courseId, courseTitle: title),
-              ),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _CourseHeader(
-                  title: title,
-                  level: level,
-                  description: description,
-                  active: active,
-                ),
-                const SizedBox(height: 16),
-                Divider(color: cs.outlineVariant),
-                const SizedBox(height: 8),
-
-                Row(
-                  children: [
-                    _StatusChip(active: active),
-                    const Spacer(),
-
-                    IconButton(
-                      tooltip: 'Edit',
-                      icon: HugeIcon(
-                        icon: HugeIcons.strokeRoundedPencilEdit02,
-                        size: 20,
-                        color: cs.primary,
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => EditCourseScreen(
-                              courseId: courseId,
-                              title: title,
-                              description: description,
-                              order: order,
-                              active: active,
-                              level: level,
-                              additionalDetails: additionalDetails,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-
-                    IconButton(
-                      tooltip: 'Delete',
-                      icon: HugeIcon(
-                        icon: HugeIcons.strokeRoundedDelete02,
-                        size: 20,
-                        color: cs.error,
-                      ),
-                      onPressed: () => _deleteCourse(context),
-                    ),
-                  ],
-                ),
-              ],
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  AdminSubjectsScreen(courseId: courseId, courseTitle: title),
             ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _CourseHeader(
+                title: title,
+                level: level,
+                description: description,
+                active: active,
+              ),
+              const SizedBox(height: 16),
+              Divider(color: cs.outlineVariant.withOpacity(0.5)),
+              const SizedBox(height: 8),
+
+              Row(
+                children: [
+                  _StatusChip(active: active),
+                  const Spacer(),
+
+                  IconButton(
+                    tooltip: 'Edit',
+                    icon: AppSvgIcon(
+                      asset: AppIcons.edit,
+                      size: 20,
+                      color: cs.primary,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditCourseScreen(
+                            courseId: courseId,
+                            title: title,
+                            description: description,
+                            order: order,
+                            active: active,
+                            level: level,
+                            additionalDetails: additionalDetails,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  IconButton(
+                    tooltip: 'Delete',
+                    icon: AppSvgIcon(
+                      asset: AppIcons.delete,
+                      size: 20,
+                      color: cs.error,
+                    ),
+                    onPressed: () => _deleteCourse(context),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -322,12 +316,14 @@ class _CourseHeader extends StatelessWidget {
           height: 48,
           width: 48,
           decoration: BoxDecoration(
-            color: active ? cs.primary.withOpacity(0.12) : cs.surfaceVariant,
+            color: active
+                ? cs.primary.withOpacity(0.12)
+                : cs.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Center(
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedBook01,
+            child: AppSvgIcon(
+              asset: AppIcons.book,
               size: 24,
               color: active ? cs.primary : cs.onSurfaceVariant,
             ),
@@ -388,8 +384,8 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            active ? Icons.check_circle : Icons.cancel,
+          AppSvgIcon(
+            asset: active ? AppIcons.checkmark : AppIcons.close,
             size: 14,
             color: color,
           ),

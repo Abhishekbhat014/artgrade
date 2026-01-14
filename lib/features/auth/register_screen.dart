@@ -1,8 +1,7 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hugeicons/hugeicons.dart';
-
 import 'package:artgrade/utils/snackbar.dart';
 import 'package:artgrade/utils/validators.dart';
 
@@ -20,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   final confirmPassCtrl = TextEditingController();
+  final dobCtrl = TextEditingController();
 
   bool _hidePassword = true;
   bool _hideConfirmPassword = true;
@@ -28,6 +28,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? gender;
 
   bool loading = false;
+
+  @override
+  void dispose() {
+    firstNameCtrl.dispose();
+    middleNameCtrl.dispose();
+    lastNameCtrl.dispose();
+    emailCtrl.dispose();
+    passCtrl.dispose();
+    confirmPassCtrl.dispose();
+    dobCtrl.dispose();
+    super.dispose();
+  }
+
+  // ------------------
+  // 📅 Logic
+  // ------------------
+
   Future<void> pickDob() async {
     final picked = await showDatePicker(
       context: context,
@@ -37,13 +54,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     if (picked != null) {
-      setState(() => dob = picked);
+      setState(() {
+        dob = picked;
+        dobCtrl.text =
+            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+      });
     }
   }
 
-  // ------------------
-  // Registration logic
-  // ------------------
   Future<void> register() async {
     if (loading) return;
 
@@ -53,9 +71,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = emailCtrl.text.trim();
     final password = passCtrl.text;
 
-    // ------------------
-    // Validation
-    // ------------------
     if (!Validators.isNotEmpty(firstName) ||
         !Validators.isNotEmpty(lastName) ||
         !Validators.isNotEmpty(email)) {
@@ -104,17 +119,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     UserCredential? cred;
 
     try {
-      // ------------------
-      // 1️⃣ Create Auth user
-      // ------------------
       cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // ------------------
-      // 2️⃣ Create Firestore profile
-      // ------------------
       await FirebaseFirestore.instance
           .collection('users')
           .doc(cred.user!.uid)
@@ -126,7 +135,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             "role": "student",
             "dob": Timestamp.fromDate(dob!),
             "gender": gender,
-
             "active": true,
             "createdAt": Timestamp.now(),
           });
@@ -135,7 +143,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       AppSnackBar.show(context, "Account created successfully!");
 
-      // Small delay so user sees feedback
       await Future.delayed(const Duration(milliseconds: 500));
       if (!mounted) return;
 
@@ -153,16 +160,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       AppSnackBar.show(context, message, isError: true);
     } catch (e) {
-      // ------------------
-      // 🔥 ROLLBACK AUTH USER
-      // ------------------
       try {
         if (FirebaseAuth.instance.currentUser != null) {
           await FirebaseAuth.instance.currentUser!.delete();
         }
-      } catch (_) {
-        // Ignore rollback errors
-      }
+      } catch (_) {}
 
       if (!mounted) return;
 
@@ -176,57 +178,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    firstNameCtrl.dispose();
-    middleNameCtrl.dispose();
-    lastNameCtrl.dispose();
-    emailCtrl.dispose();
-    passCtrl.dispose();
-    confirmPassCtrl.dispose();
-    super.dispose();
-  }
-
   // ------------------
-  // Input decoration helper
+  // 🎨 UI Helpers (M3 Styled)
   // ------------------
-  InputDecoration inputDecor(String label, dynamic icon) {
+  InputDecoration _inputDecor(
+    String label,
+    String asset,
+    ColorScheme colorScheme,
+  ) {
     return InputDecoration(
       labelText: label,
+      labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+      // M3 Filled Style
+      filled: true,
+      fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       prefixIcon: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: HugeIcon(icon: icon, size: 18, color: Colors.grey),
+        padding: const EdgeInsets.only(left: 16, right: 12),
+        child: AppSvgIcon(
+          asset: asset,
+          size: 22,
+          color: colorScheme.onSurfaceVariant,
+        ),
       ),
-      prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: HugeIcon(
-            icon: HugeIcons.strokeRoundedArrowLeft01,
-            color: colorScheme.onSurface,
+          icon: AppSvgIcon(
+            asset: AppIcons.arrow_left,
+            color: cs.onSurface,
+            size: 22,
           ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // LOGO
                 Image.asset(
                   'assets/images/ArtGradeLogo.png',
                   height: 80,
@@ -234,36 +245,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 24),
 
+                // HEADERS
                 Text(
                   "Create Account",
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: cs.onSurface,
+                    letterSpacing: -0.5,
+                  ),
                 ),
                 const SizedBox(height: 8),
-
                 Text(
                   "Join us and start your journey.",
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 32),
 
+                // FIELDS
                 TextField(
                   controller: firstNameCtrl,
                   textInputAction: TextInputAction.next,
-                  decoration: inputDecor(
-                    "First Name",
-                    HugeIcons.strokeRoundedUser,
-                  ),
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor("First Name", AppIcons.user, cs),
                 ),
                 const SizedBox(height: 16),
 
                 TextField(
                   controller: middleNameCtrl,
                   textInputAction: TextInputAction.next,
-                  decoration: inputDecor(
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor(
                     "Middle Name (optional)",
-                    HugeIcons.strokeRoundedUser,
+                    AppIcons.user,
+                    cs,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -271,61 +289,81 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextField(
                   controller: lastNameCtrl,
                   textInputAction: TextInputAction.next,
-                  decoration: inputDecor(
-                    "Last Name",
-                    HugeIcons.strokeRoundedUser,
-                  ),
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor("Last Name", AppIcons.user, cs),
                 ),
                 const SizedBox(height: 16),
+
+                // ✅ M3 COMPLIANT DROPDOWN
                 DropdownButtonFormField<String>(
                   value: gender,
-                  decoration: inputDecor(
-                    "Gender",
-                    HugeIcons.strokeRoundedUserCircle,
+                  // Color for the dropdown MENU background (Popup)
+                  dropdownColor: cs.surfaceContainerHigh,
+                  // Shape of the dropdown MENU (Popup)
+                  borderRadius: BorderRadius.circular(16),
+                  // Style of the selected item text inside the field
+                  style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: 16,
+                    fontFamily: theme.textTheme.bodyLarge?.fontFamily,
                   ),
+                  decoration: _inputDecor("Gender", AppIcons.gender, cs),
                   items: const [
                     DropdownMenuItem(value: "male", child: Text("Male")),
                     DropdownMenuItem(value: "female", child: Text("Female")),
                     DropdownMenuItem(value: "other", child: Text("Other")),
                   ],
-                  onChanged: (value) {
-                    setState(() => gender = value);
-                  },
-                  icon: HugeIcon(
-                    icon: HugeIcons.strokeRoundedArrowDown01,
-                    size: 18,
-                    color: Colors.grey,
+                  onChanged: (value) => setState(() => gender = value),
+                  icon: AppSvgIcon(
+                    asset: AppIcons.arrow_down,
+                    size: 20,
+                    color: cs.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 16),
 
+                // DOB
+                GestureDetector(
+                  onTap: pickDob,
+                  child: AbsorbPointer(
+                    child: TextField(
+                      controller: dobCtrl,
+                      style: TextStyle(color: cs.onSurface),
+                      decoration: _inputDecor(
+                        "Date of Birth",
+                        AppIcons.calender,
+                        cs,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // EMAIL
                 TextField(
                   controller: emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
-                  decoration: inputDecor(
-                    "Email",
-                    HugeIcons.strokeRoundedMail01,
-                  ),
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor("Email", AppIcons.email, cs),
                 ),
                 const SizedBox(height: 20),
 
+                // PASSWORD
                 TextField(
                   controller: passCtrl,
                   obscureText: _hidePassword,
                   textInputAction: TextInputAction.next,
-                  decoration:
-                      inputDecor(
-                        "Password",
-                        HugeIcons.strokeRoundedLockPassword,
-                      ).copyWith(
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor("Password", AppIcons.password, cs)
+                      .copyWith(
                         suffixIcon: IconButton(
-                          icon: HugeIcon(
-                            icon: _hidePassword
-                                ? HugeIcons.strokeRoundedViewOff
-                                : HugeIcons.strokeRoundedView,
-                            size: 18,
-                            color: Colors.grey,
+                          icon: AppSvgIcon(
+                            asset: _hidePassword
+                                ? AppIcons.view_off
+                                : AppIcons.view,
+                            size: 20,
+                            color: cs.onSurfaceVariant,
                           ),
                           onPressed: () {
                             setState(() => _hidePassword = !_hidePassword);
@@ -333,24 +371,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                 ),
-
                 const SizedBox(height: 16),
+
+                // CONFIRM PASSWORD
                 TextField(
                   controller: confirmPassCtrl,
                   obscureText: _hideConfirmPassword,
                   textInputAction: TextInputAction.done,
+                  style: TextStyle(color: cs.onSurface),
                   decoration:
-                      inputDecor(
+                      _inputDecor(
                         "Re-enter Password",
-                        HugeIcons.strokeRoundedLockPassword,
+                        AppIcons.password,
+                        cs,
                       ).copyWith(
                         suffixIcon: IconButton(
-                          icon: HugeIcon(
-                            icon: _hideConfirmPassword
-                                ? HugeIcons.strokeRoundedViewOff
-                                : HugeIcons.strokeRoundedView,
-                            size: 18,
-                            color: Colors.grey,
+                          icon: AppSvgIcon(
+                            asset: _hideConfirmPassword
+                                ? AppIcons.view_off
+                                : AppIcons.view,
+                            size: 20,
+                            color: cs.onSurfaceVariant,
                           ),
                           onPressed: () {
                             setState(
@@ -363,30 +404,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 32),
 
+                // REGISTER BUTTON
                 FilledButton(
                   onPressed: loading ? null : register,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                   child: loading
                       ? SizedBox(
-                          height: 22,
-                          width: 22,
+                          height: 24,
+                          width: 24,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: colorScheme.onPrimary,
+                            color: cs.onPrimary,
                           ),
                         )
-                      : const Text("Create Account"),
+                      : const Text(
+                          "Create Account",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 24),
 
+                // LOGIN LINK
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       "Already have an account?",
-                      style: theme.textTheme.bodyMedium,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: cs.primary,
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       child: const Text("Login"),
                     ),
                   ],

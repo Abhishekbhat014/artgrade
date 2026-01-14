@@ -31,19 +31,20 @@ dependencies:
   flutter:
     sdk: flutter
 
-  firebase_core: ^3.6.0
-  firebase_auth: ^5.3.1
-  cloud_firestore: ^5.4.4
-  hugeicons:
+  firebase_core: ^2.27.0
+  firebase_auth: ^4.17.8
+  cloud_firestore: ^4.15.8
+  shared_preferences: ^2.2.3
   url_launcher: ^6.3.2
-  connectivity_plus: ^7.0.0
   fl_chart:
   intl: ^0.20.2
   http:
   video_player:
-  flutter_pdfview:
   path_provider:
   chewie:
+  flutter_svg: ^2.2.3
+  provider: ^6.1.5+1
+  flutter_pdfview:
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +70,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/ArtGradeLogo.png
+    - assets/icons/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

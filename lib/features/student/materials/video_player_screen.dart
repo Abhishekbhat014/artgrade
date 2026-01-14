@@ -1,7 +1,7 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
@@ -150,7 +150,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         centerTitle: true,
         iconTheme: IconThemeData(color: cs.onSurface),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: AppSvgIcon(
+            asset: AppIcons.arrow_left,
+            size: 20,
+            color: cs.onSurface,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -176,11 +180,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            HugeIcon(
-              icon: HugeIcons.strokeRoundedAlert02,
-              size: 48,
-              color: cs.error,
-            ),
+            AppSvgIcon(asset: AppIcons.info, size: 48, color: cs.error),
             const SizedBox(height: 16),
             Text(
               "Failed to load video",
@@ -194,7 +194,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 setState(() => _isError = false);
                 _initializePlayer();
               },
-              icon: const Icon(Icons.refresh_rounded, size: 18),
+              icon: const AppSvgIcon(asset: AppIcons.refresh, size: 18),
               label: const Text("Retry"),
             ),
           ],

@@ -1,8 +1,7 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hugeicons/hugeicons.dart';
-
 import 'subjects/student_subjects_screen.dart';
 
 class StudentHome extends StatelessWidget {
@@ -11,23 +10,23 @@ class StudentHome extends StatelessWidget {
   static const List<Map<String, dynamic>> _dailyTips = [
     {
       "text": "Master light and shadow before perfecting outlines.",
-      "icon": HugeIcons.strokeRoundedSun03,
+      "asset": AppIcons.sun,
     },
     {
       "text": "Consistency beats intensity. Sketch for 10 mins daily.",
-      "icon": HugeIcons.strokeRoundedTime02,
+      "asset": AppIcons.time,
     },
     {
       "text": "Focus on shapes first, details come last.",
-      "icon": HugeIcons.strokeRoundedShapes,
+      "asset": AppIcons.shape,
     },
     {
       "text": "Your observation skills matter more than speed.",
-      "icon": HugeIcons.strokeRoundedEye,
+      "asset": AppIcons.eye,
     },
     {
       "text": "Every expert was once a beginner. Keep going.",
-      "icon": HugeIcons.strokeRoundedRocket01,
+      "asset": AppIcons.rocket,
     },
   ];
 
@@ -35,27 +34,24 @@ class StudentHome extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     final todayTip = _dailyTips[DateTime.now().day % _dailyTips.length];
 
-    final twoDaysAgo = Timestamp.fromDate(
-      DateTime.now().subtract(const Duration(days: 2)),
-    );
-
     return Scaffold(
+      extendBody: true, // ✅ Allows content to scroll behind floating navbar
       backgroundColor: theme.scaffoldBackgroundColor,
-
       appBar: AppBar(
         centerTitle: false,
-        elevation: 0,
+        scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
         title: Padding(
           padding: const EdgeInsets.only(left: 8),
           child: Text(
             "ArtGrade",
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w900,
               color: cs.onSurface,
             ),
           ),
@@ -63,8 +59,8 @@ class StudentHome extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () {},
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedNotification03,
+            icon: AppSvgIcon(
+              asset: AppIcons.notification,
               size: 24,
               color: cs.onSurface,
             ),
@@ -72,73 +68,93 @@ class StudentHome extends StatelessWidget {
           const SizedBox(width: 16),
         ],
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        // ✅ Bottom padding ensures content isn't hidden by the floating navbar
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// GREETING
+            /// 1. Greeting Section
             FutureBuilder<DocumentSnapshot>(
               future: FirebaseFirestore.instance
                   .collection('users')
                   .doc(uid)
                   .get(),
               builder: (context, snapshot) {
-                final name = snapshot.data?.get('firstName') ?? 'Student';
-                return _Greeting(name: name);
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(height: 60);
+                }
+
+                String name = "Student";
+                if (snapshot.hasData && snapshot.data!.exists) {
+                  final data = snapshot.data!.data() as Map<String, dynamic>;
+                  name = data['firstName'] ?? "Student";
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Welcome back, $name",
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Let’s create something amazing today.",
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                );
               },
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
-            /// PRO TIP (UNCHANGED)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: cs.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: cs.primary.withOpacity(0.1)),
+            /// 2. Daily Tip Card
+            _HomeInfoCard(
+              // Daily tip specific colors
+              iconBgColor: cs.primaryContainer,
+              iconColor: cs.onPrimaryContainer,
+              iconAsset: todayTip['asset'],
+              // Content
+              title: Text(
+                "DAILY TIP",
+                style: textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: cs.primary,
+                ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: cs.primary.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: HugeIcon(
-                      icon: todayTip['icon'],
-                      size: 24,
-                      color: cs.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      todayTip['text'],
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: cs.onSurface,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
+              subtitle: Text(
+                todayTip['text'],
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
               ),
             ),
 
             const SizedBox(height: 32),
 
-            /// CONTINUE LEARNING (LOGIC FIXED, UI SAME)
-            Text(
-              "Continue Learning",
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+            /// 3. Continue Learning Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                "Continue Learning",
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: cs.onSurface,
+                ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
+            /// 4. Course Progress Card
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('user_progress')
@@ -148,10 +164,17 @@ class StudentHome extends StatelessWidget {
                   .limit(1)
                   .snapshots(),
               builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const _M3StatusCard(
+                    icon: AppIcons.info,
+                    text: "Could not load progress.",
+                  );
+                }
+
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return _EmptyState(
-                    icon: HugeIcons.strokeRoundedPlay,
-                    text: "Start a course to track progress",
+                  return const _M3StatusCard(
+                    icon: AppIcons.play,
+                    text: "Start a course to track progress.",
                   );
                 }
 
@@ -163,23 +186,55 @@ class StudentHome extends StatelessWidget {
                       .doc(courseId)
                       .get(),
                   builder: (context, courseSnap) {
-                    if (!courseSnap.hasData) {
-                      return const CircularProgressIndicator();
+                    if (courseSnap.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (!courseSnap.hasData || !courseSnap.data!.exists) {
+                      return const SizedBox.shrink();
                     }
 
-                    return _ContinueCard(
-                      title: courseSnap.data!['title'],
+                    final data =
+                        courseSnap.data!.data() as Map<String, dynamic>;
+                    final title = data['title'] ?? 'Course';
+
+                    // Using the same unified card component
+                    return _HomeInfoCard(
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => SubjectsScreen(
                               courseId: courseId,
-                              courseTitle: courseSnap.data!['title'],
+                              courseTitle: title,
                             ),
                           ),
                         );
                       },
+                      // Course specific colors
+                      iconBgColor: cs.secondaryContainer,
+                      iconColor: cs.onSecondaryContainer,
+                      iconAsset: AppIcons.play,
+                      // Content
+                      title: Text(
+                        title,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        "Tap to resume",
+                        style: textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                      // Arrow icon for action
+                      trailing: AppSvgIcon(
+                        asset: AppIcons.arrow_right,
+                        color: cs.onSurfaceVariant,
+                        size: 20,
+                      ),
                     );
                   },
                 );
@@ -188,50 +243,18 @@ class StudentHome extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-            /// FRESH CONTENT (2 DAYS FILTER, UI SAME)
-            Text(
-              "Fresh Content",
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+            /// 5. Fresh Content Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                "Fresh Content",
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: cs.onSurface,
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collectionGroup('materials')
-                  .where('createdAt', isGreaterThan: twoDaysAgo)
-                  .orderBy('createdAt', descending: true)
-                  .limit(5)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return _EmptyState(
-                    icon: HugeIcons.strokeRoundedFolder02,
-                    text: "No new materials available",
-                  );
-                }
-
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemCount: snapshot.data!.docs.length,
-                  itemBuilder: (context, index) {
-                    final d =
-                        snapshot.data!.docs[index].data()
-                            as Map<String, dynamic>;
-
-                    return _MaterialCard(
-                      title: d['title'] ?? 'Untitled',
-                      type: d['type'] ?? 'link',
-                    );
-                  },
-                );
-              },
-            ),
-
-            const SizedBox(height: 40),
+            const SizedBox(height: 12),
           ],
         ),
       ),
@@ -241,144 +264,101 @@ class StudentHome extends StatelessWidget {
 
 /// ---------------- COMPONENTS ----------------
 
-class _Greeting extends StatelessWidget {
-  final String name;
-  const _Greeting({required this.name});
+/// ✅ Standard Material 3 Card
+/// Automatically handles Dark Mode surface tinting and Light Mode shadows.
+class _HomeInfoCard extends StatelessWidget {
+  final VoidCallback? onTap;
+  final String iconAsset;
+  final Color iconBgColor;
+  final Color iconColor;
+  final Widget title;
+  final Widget subtitle;
+  final Widget? trailing;
+
+  const _HomeInfoCard({
+    this.onTap,
+    required this.iconAsset,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Welcome back, $name",
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-            color: cs.onSurface,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          "Let’s continue your creative journey",
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-        ),
-      ],
-    );
-  }
-}
-
-class _ContinueCard extends StatelessWidget {
-  final String title;
-  final VoidCallback onTap;
-
-  const _ContinueCard({required this.title, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: ListTile(
+    return Card(
+      elevation: 2, // Standard M3 Elevation
+      margin: EdgeInsets.zero,
+      child: InkWell(
         onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: cs.primary.withOpacity(0.1),
-          child: HugeIcon(icon: HugeIcons.strokeRoundedPlay, color: cs.primary),
-        ),
-        title: Text(
-          title,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          "Resume where you left off",
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-        ),
-        trailing: HugeIcon(
-          icon: HugeIcons.strokeRoundedArrowRight01,
-          color: cs.onSurfaceVariant,
+        borderRadius: BorderRadius.circular(16), // Matches Card Shape
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                height: 48,
+                width: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  shape: BoxShape.circle,
+                ),
+                child: AppSvgIcon(asset: iconAsset, size: 24, color: iconColor),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [title, const SizedBox(height: 4), subtitle],
+                ),
+              ),
+              if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _MaterialCard extends StatelessWidget {
-  final String title;
-  final String type;
-
-  const _MaterialCard({required this.title, required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedFolder02,
-            size: 20,
-            color: cs.primary,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: cs.onSurface),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final dynamic icon;
+/// ✅ Outlined Card for Empty States
+class _M3StatusCard extends StatelessWidget {
+  final String icon;
   final String text;
 
-  const _EmptyState({required this.icon, required this.text});
+  const _M3StatusCard({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cs.outlineVariant),
+    // Use a Card with 0 elevation and a Border side for "Outlined" look
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: cs.outlineVariant),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        children: [
-          HugeIcon(icon: icon, size: 32, color: cs.onSurfaceVariant),
-          const SizedBox(height: 12),
-          Text(
-            text,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-          ),
-        ],
+      color: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppSvgIcon(asset: icon, size: 20, color: cs.onSurfaceVariant),
+            const SizedBox(width: 12),
+            Text(
+              text,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

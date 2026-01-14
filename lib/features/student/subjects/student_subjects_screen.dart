@@ -1,8 +1,7 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hugeicons/hugeicons.dart';
-
 import '../materials/student_materials_screen.dart';
 
 class SubjectsScreen extends StatefulWidget {
@@ -30,7 +29,6 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
   Future<void> _loadUserProgress() async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
-
     final doc = await FirebaseFirestore.instance
         .collection('user_progress')
         .doc(uid)
@@ -56,14 +54,14 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: HugeIcon(
-            icon: HugeIcons.strokeRoundedArrowLeft01,
+          icon: AppSvgIcon(
+            asset: AppIcons.arrow_left,
             size: 20,
             color: cs.onSurface,
           ),
@@ -77,13 +75,12 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
           ),
         ),
       ),
-
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ================= COURSE HEADER =================
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 10, 24, 20),
+            padding: const EdgeInsets.fromLTRB(24, 10, 24, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -92,6 +89,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: cs.onSurface,
+                    letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -120,19 +118,14 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                     child: CircularProgressIndicator(color: cs.primary),
                   );
                 }
-
-                if (snapshot.hasError) {
-                  return _ErrorState();
-                }
+                if (snapshot.hasError) return _ErrorState();
 
                 final subjects = snapshot.data?.docs ?? [];
-
-                if (subjects.isEmpty) {
-                  return _EmptyState();
-                }
+                if (subjects.isEmpty) return _EmptyState();
 
                 return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                  // Padding for Floating Navbar
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                   itemCount: subjects.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
@@ -149,7 +142,6 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                           .snapshots(),
                       builder: (context, matSnap) {
                         final totalMaterials = matSnap.data?.docs.length ?? 0;
-
                         final completedForSubject =
                             matSnap.data?.docs
                                 .where((m) => completedMaterials.contains(m.id))
@@ -159,7 +151,6 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                         return _SubjectCard(
                           title: subjectData['title'] ?? 'Untitled',
                           subtitle: subjectData['subtitle'],
-                          minPersons: subjectData['minPersons'],
                           completedSteps: completedForSubject,
                           totalSteps: totalMaterials,
                           onTap: () async {
@@ -190,12 +181,11 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 }
 
 // ==================================================
-// SUBJECT CARD (THEME SAFE)
+// ✅ M3 COMPLIANT SUBJECT CARD
 // ==================================================
 class _SubjectCard extends StatelessWidget {
   final String title;
   final String? subtitle;
-  final int? minPersons;
   final int completedSteps;
   final int totalSteps;
   final VoidCallback onTap;
@@ -203,7 +193,6 @@ class _SubjectCard extends StatelessWidget {
   const _SubjectCard({
     required this.title,
     this.subtitle,
-    this.minPersons,
     required this.completedSteps,
     required this.totalSteps,
     required this.onTap,
@@ -212,185 +201,149 @@ class _SubjectCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bool isCompleted = totalSteps > 0 && completedSteps == totalSteps;
     final bool isStarted = completedSteps > 0;
     final double progress = totalSteps > 0 ? completedSteps / totalSteps : 0;
 
+    // Dynamic Colors
     final Color stateColor = isCompleted
-        ? Colors.green
+        ? const Color(0xFF4ADE80) // Bright Green
         : isStarted
         ? cs.primary
         : cs.onSurfaceVariant;
 
-    final Color bgColor = isCompleted
-        ? Colors.green.withOpacity(0.12)
+    final Color iconBg = isCompleted
+        ? const Color(0xFF4ADE80).withOpacity(0.15)
         : isStarted
-        ? cs.primary.withOpacity(0.12)
-        : cs.surfaceVariant;
+        ? cs.primary.withOpacity(0.15)
+        : cs.surfaceContainerHighest;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // HEADER
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 52,
-                      width: 52,
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: HugeIcon(
-                          icon: isCompleted
-                              ? HugeIcons.strokeRoundedCheckmarkCircle02
-                              : HugeIcons.strokeRoundedBookOpen01,
-                          size: 24,
-                          color: stateColor,
-                        ),
+    // ✅ Using Standard Card (Theme handles Elevation/Shadows/Tint)
+    return Card(
+      // Elevation creates shadow in Light Mode, Surface Tint in Dark Mode
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16), // Matches Card Theme
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // TOP ROW: Icon + Text
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon Box
+                  Container(
+                    height: 48,
+                    width: 48,
+                    decoration: BoxDecoration(
+                      color: iconBg,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Center(
+                      child: AppSvgIcon(
+                        asset: isCompleted ? AppIcons.checkmark : AppIcons.book,
+                        size: 22,
+                        color: stateColor,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                  ),
+                  const SizedBox(width: 16),
 
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                  // Titles
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: cs.onSurface,
+                                height: 1.2,
+                              ),
+                        ),
+                        if (subtitle != null && subtitle!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
                           Text(
-                            title,
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: cs.onSurface,
-                                ),
+                            subtitle!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: cs.onSurfaceVariant),
                           ),
-                          if (subtitle != null && subtitle!.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              subtitle!,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: cs.onSurfaceVariant),
-                            ),
-                          ],
                         ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // BOTTOM ROW: Status Chip + Progress Text
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Status Chip
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: iconBg,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      isCompleted
+                          ? "Completed"
+                          : isStarted
+                          ? "In Progress"
+                          : "Start Learning",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: stateColor,
                       ),
                     ),
+                  ),
 
-                    if (minPersons != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: cs.tertiary.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            HugeIcon(
-                              icon: HugeIcons.strokeRoundedUserGroup,
-                              size: 14,
-                              color: cs.tertiary,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "$minPersons+",
-                              style: Theme.of(context).textTheme.labelMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: cs.tertiary,
-                                  ),
-                            ),
-                          ],
-                        ),
+                  // Percentage Text
+                  if (totalSteps > 0)
+                    Text(
+                      "${(progress * 100).toInt()}%",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: stateColor,
                       ),
-                  ],
+                    ),
+                ],
+              ),
+
+              // PROGRESS BAR
+              if (totalSteps > 0) ...[
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: isDark
+                        ? Colors.white.withOpacity(0.05)
+                        : cs.surfaceContainerHighest,
+                    valueColor: AlwaysStoppedAnimation(stateColor),
+                  ),
                 ),
-
-                const SizedBox(height: 16),
-                Divider(color: cs.outlineVariant),
-                const SizedBox(height: 12),
-
-                // FOOTER
-                if (totalSteps > 0) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        isCompleted
-                            ? "Completed"
-                            : isStarted
-                            ? "In Progress"
-                            : "Not Started",
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: stateColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                      Text(
-                        "${(progress * 100).toInt()}%",
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: stateColor,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      backgroundColor: cs.surfaceVariant,
-                      valueColor: AlwaysStoppedAnimation(stateColor),
-                    ),
-                  ),
-                ] else
-                  Row(
-                    children: [
-                      HugeIcon(
-                        icon: HugeIcons.strokeRoundedInformationCircle,
-                        size: 14,
-                        color: cs.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        "Coming Soon",
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(color: cs.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -406,13 +359,12 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedFolder02,
+          AppSvgIcon(
+            asset: AppIcons.folder,
             size: 64,
             color: cs.onSurfaceVariant,
           ),
@@ -433,7 +385,6 @@ class _ErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
     return Center(
       child: Text(
         "Failed to load subjects",

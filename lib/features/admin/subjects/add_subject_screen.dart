@@ -1,7 +1,6 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hugeicons/hugeicons.dart';
-
 import 'package:artgrade/utils/snackbar.dart';
 import 'package:artgrade/utils/validators.dart';
 
@@ -122,48 +121,48 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
   }
 
   // --------------------------------------------------
-  // UI
+  // UI (M3 STYLED)
   // --------------------------------------------------
+  InputDecoration _inputDecor(
+    String label,
+    String? asset, {
+    String? hint,
+    required ColorScheme cs,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      labelStyle: TextStyle(color: cs.onSurfaceVariant),
+      hintStyle: TextStyle(color: cs.onSurfaceVariant.withOpacity(0.5)),
+      filled: true,
+      fillColor: cs.surfaceContainerHighest.withOpacity(0.5),
+      prefixIcon: asset != null
+          ? Padding(
+              padding: const EdgeInsets.only(left: 16, right: 12),
+              child: AppSvgIcon(
+                asset: asset,
+                size: 22,
+                color: cs.onSurfaceVariant,
+              ),
+            )
+          : null,
+      prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: cs.primary, width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-
-    InputDecoration decor(String label, dynamic icon, {String? hint}) {
-      return InputDecoration(
-        labelText: label,
-        hintText: hint,
-        filled: true,
-        fillColor: cs.surface,
-        labelStyle: TextStyle(color: cs.onSurfaceVariant),
-        prefixIcon: icon == null
-            ? null
-            : Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: HugeIcon(
-                  icon: icon,
-                  size: 20,
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.primary, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 16,
-        ),
-      );
-    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -172,7 +171,11 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01),
+          icon: AppSvgIcon(
+            asset: AppIcons.arrow_left,
+            color: cs.onSurface,
+            size: 22,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -193,25 +196,34 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
               children: [
                 TextField(
                   controller: titleCtrl,
-                  decoration: decor(
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor(
                     "Subject Title",
-                    HugeIcons.strokeRoundedHeading02,
+                    AppIcons.title,
+                    cs: cs,
                   ),
                 ),
                 const SizedBox(height: 16),
 
                 TextField(
                   controller: subtitleCtrl,
-                  decoration: decor("Subtitle", HugeIcons.strokeRoundedNote01),
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor(
+                    "Subtitle",
+                    AppIcons.description,
+                    cs: cs,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
                 TextField(
                   controller: orderCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: decor(
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor(
                     "Display Order",
-                    HugeIcons.strokeRoundedSorting05,
+                    AppIcons.order,
+                    cs: cs,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -219,13 +231,16 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
                 TextField(
                   controller: minPersonsCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: decor(
+                  style: TextStyle(color: cs.onSurface),
+                  decoration: _inputDecor(
                     "Min Persons (Optional)",
-                    HugeIcons.strokeRoundedUserGroup,
+                    AppIcons.user_group,
+                    cs: cs,
                   ),
                 ),
                 const SizedBox(height: 32),
 
+                // Extra Fields Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -238,24 +253,50 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
                     ),
                     TextButton.icon(
                       onPressed: _addExtraField,
-                      icon: const HugeIcon(icon: HugeIcons.strokeRoundedAdd01),
-                      label: const Text("Add Field"),
+                      icon: AppSvgIcon(
+                        asset: AppIcons.plus,
+                        size: 18,
+                        color: cs.primary,
+                      ),
+                      label: Text(
+                        "Add Field",
+                        style: TextStyle(
+                          color: cs.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 if (_extraFields.isEmpty)
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: cs.surfaceVariant,
-                      borderRadius: BorderRadius.circular(12),
+                      color: cs.surfaceContainerHighest.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: cs.outlineVariant.withOpacity(0.5),
+                      ),
                     ),
-                    child: Text(
-                      "No extra fields added yet",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: cs.onSurfaceVariant),
+                    child: Column(
+                      children: [
+                        AppSvgIcon(
+                          asset: AppIcons.info,
+                          size: 32,
+                          color: cs.onSurfaceVariant.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "No extra fields added yet",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
@@ -270,7 +311,12 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
                           flex: 2,
                           child: TextField(
                             controller: f.keyCtrl,
-                            decoration: decor("Label", null),
+                            style: TextStyle(color: cs.onSurface),
+                            decoration: _inputDecor(
+                              "Label",
+                              null, // No icon for dynamic labels to save space
+                              cs: cs,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -278,13 +324,15 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
                           flex: 3,
                           child: TextField(
                             controller: f.valueCtrl,
-                            decoration: decor("Value", null),
+                            style: TextStyle(color: cs.onSurface),
+                            decoration: _inputDecor("Value", null, cs: cs),
                           ),
                         ),
                         IconButton(
-                          icon: const HugeIcon(
-                            icon: HugeIcons.strokeRoundedRemoveCircle,
-                            color: Colors.redAccent,
+                          icon: AppSvgIcon(
+                            asset: AppIcons.remove,
+                            size: 24,
+                            color: cs.error,
                           ),
                           onPressed: () => _removeExtraField(i),
                         ),
@@ -297,6 +345,12 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
 
                 FilledButton(
                   onPressed: loading ? null : _saveSubject,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                   child: loading
                       ? SizedBox(
                           height: 24,
@@ -306,8 +360,15 @@ class _AddSubjectScreenState extends State<AddSubjectScreen> {
                             color: cs.onPrimary,
                           ),
                         )
-                      : const Text("Save Subject"),
+                      : const Text(
+                          "Save Subject",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
+                const SizedBox(height: 40),
               ],
             ),
           ),

@@ -1,7 +1,7 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 class AdminHome extends StatelessWidget {
   const AdminHome({super.key});
@@ -16,12 +16,12 @@ class AdminHome extends StatelessWidget {
     final prevWeek = now.subtract(const Duration(days: 14));
 
     return Scaffold(
-      // ✅ Use theme background (Dark: Slate, Light: Soft Grey)
       backgroundColor: theme.scaffoldBackgroundColor,
 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         title: Padding(
           padding: const EdgeInsets.only(left: 8.0),
@@ -33,7 +33,6 @@ class AdminHome extends StatelessWidget {
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   fontSize: 24,
-                  // ✅ Dynamic Text Color
                   color: cs.onSurface,
                 ),
               ),
@@ -41,7 +40,6 @@ class AdminHome extends StatelessWidget {
               Text(
                 "Real-time overview",
                 style: theme.textTheme.bodySmall?.copyWith(
-                  // ✅ Dynamic Subtitle Color
                   color: cs.onSurface.withOpacity(0.6),
                   fontWeight: FontWeight.w500,
                 ),
@@ -97,7 +95,8 @@ class AdminHome extends StatelessWidget {
                   .length;
 
               return SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                // ✅ Added bottom padding for Floating Navbar
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -108,7 +107,7 @@ class AdminHome extends StatelessWidget {
                           child: _OverviewCard(
                             label: "Total Students",
                             value: totalStudents.toString(),
-                            icon: HugeIcons.strokeRoundedUserGroup,
+                            asset: AppIcons.user_group,
                             color: Colors.blueAccent,
                           ),
                         ),
@@ -117,7 +116,7 @@ class AdminHome extends StatelessWidget {
                           child: _OverviewCard(
                             label: "Active Courses",
                             value: activeCourses.toString(),
-                            icon: HugeIcons.strokeRoundedBookOpen01,
+                            asset: AppIcons.book,
                             color: Colors.orange,
                           ),
                         ),
@@ -193,7 +192,6 @@ class AdminHome extends StatelessWidget {
                           Container(
                             width: 1,
                             height: 40,
-                            // ✅ Dynamic divider color
                             color: cs.outlineVariant.withOpacity(0.5),
                           ),
                           _MiniStat(
@@ -244,7 +242,7 @@ class AdminHome extends StatelessWidget {
 }
 
 /* =======================================================
-   UI HELPERS (THEME SAFE)
+   UI HELPERS (M3 COMPLIANT)
 ======================================================= */
 
 class _SectionHeader extends StatelessWidget {
@@ -253,7 +251,6 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Dynamic Text Color
     final cs = Theme.of(context).colorScheme;
     return Text(
       title,
@@ -266,6 +263,7 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+// ✅ UPDATED: Replaced custom Container with Standard M3 Card
 class _CardContainer extends StatelessWidget {
   final Widget child;
   final double? height;
@@ -279,24 +277,16 @@ class _CardContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
+    // Card widget automatically handles shadows (light) and surface tint (dark)
+    return SizedBox(
       height: height,
-      padding: padding,
-      decoration: BoxDecoration(
-        // ✅ Dynamic Background (Dark Slate / White)
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            // ✅ Shadow handles dark mode (less visible or subtle)
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      child: Card(
+        elevation: 2, // Standard M3 Elevation
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(padding: padding, child: child),
       ),
-      child: child,
     );
   }
 }
@@ -304,19 +294,20 @@ class _CardContainer extends StatelessWidget {
 class _OverviewCard extends StatelessWidget {
   final String label;
   final String value;
-  final dynamic icon;
+  final String asset;
   final Color color;
 
   const _OverviewCard({
     required this.label,
     required this.value,
-    required this.icon,
+    required this.asset,
     required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    // Uses the new M3 Card Container
     return _CardContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -327,7 +318,7 @@ class _OverviewCard extends StatelessWidget {
               color: color.withOpacity(0.15),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: HugeIcon(icon: icon, size: 24, color: color),
+            child: AppSvgIcon(asset: asset, size: 24, color: color),
           ),
           const SizedBox(height: 20),
           Text(
@@ -335,7 +326,6 @@ class _OverviewCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,
-              // ✅ Dynamic Text Color
               color: cs.onSurface,
             ),
           ),
@@ -345,7 +335,6 @@ class _OverviewCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              // ✅ Dynamic Muted Text Color
               color: cs.onSurface.withOpacity(0.6),
             ),
           ),
@@ -371,8 +360,8 @@ class _TrendHint extends StatelessWidget {
     if (diff == 0) return const SizedBox.shrink();
     return Row(
       children: [
-        Icon(
-          diff > 0 ? Icons.trending_up : Icons.trending_down,
+        AppSvgIcon(
+          asset: diff > 0 ? AppIcons.trend_up : AppIcons.trend_down,
           size: 18,
           color: color,
         ),
@@ -419,7 +408,6 @@ class _MiniStat extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            // ✅ Dynamic Muted Text
             color: cs.onSurface.withOpacity(0.6),
             fontWeight: FontWeight.w600,
           ),
@@ -461,7 +449,6 @@ class _ChartLegend extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 12,
-                // ✅ Dynamic Muted Text
                 color: cs.onSurface.withOpacity(0.6),
                 fontWeight: FontWeight.w600,
               ),
@@ -471,7 +458,6 @@ class _ChartLegend extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                // ✅ Dynamic Text
                 color: cs.onSurface,
               ),
             ),
@@ -483,7 +469,7 @@ class _ChartLegend extends StatelessWidget {
 }
 
 /* =======================================================
-   CHARTS
+   CHARTS (LOGIC UNCHANGED)
 ======================================================= */
 
 class _UsersDonutChart extends StatelessWidget {
@@ -503,7 +489,6 @@ class _UsersDonutChart extends StatelessWidget {
           centerSpaceRadius: 40,
           sections: [
             PieChartSectionData(
-              // ✅ Dynamic Chart Empty Color
               color: cs.outlineVariant.withOpacity(0.3),
               value: 1,
               radius: 15,
@@ -546,7 +531,6 @@ class _UsersDonutChart extends StatelessWidget {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                // ✅ Dynamic Text
                 color: cs.onSurface,
               ),
             ),
@@ -598,7 +582,6 @@ class _CoursesBarChart extends StatelessWidget {
                   child: Text(
                     text,
                     style: TextStyle(
-                      // ✅ Dynamic Text Color
                       color: cs.onSurface.withOpacity(0.6),
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -622,11 +605,8 @@ class _CoursesBarChart extends StatelessWidget {
           show: true,
           drawVerticalLine: false,
           horizontalInterval: safeMaxY / 5,
-          getDrawingHorizontalLine: (value) => FlLine(
-            // ✅ Dynamic Grid Line Color
-            color: cs.outlineVariant.withOpacity(0.2),
-            strokeWidth: 1,
-          ),
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: cs.outlineVariant.withOpacity(0.2), strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         barGroups: [
@@ -643,7 +623,6 @@ class _CoursesBarChart extends StatelessWidget {
                 backDrawRodData: BackgroundBarChartRodData(
                   show: true,
                   toY: safeMaxY,
-                  // ✅ Dynamic Bar Background Color
                   color: cs.outlineVariant.withOpacity(0.1),
                 ),
               ),
@@ -655,7 +634,7 @@ class _CoursesBarChart extends StatelessWidget {
               BarChartRodData(
                 toY: inactive.toDouble(),
                 width: 48,
-                color: cs.outline, // Use outline color for inactive bar
+                color: cs.outline,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(8),
                 ),

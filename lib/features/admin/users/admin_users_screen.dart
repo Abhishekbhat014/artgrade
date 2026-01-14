@@ -1,7 +1,6 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hugeicons/hugeicons.dart';
-
 import 'user_tile.dart';
 
 class AdminUsersScreen extends StatefulWidget {
@@ -80,8 +79,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           IconButton(
             tooltip: "Reset Filters",
             onPressed: _resetFilters,
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedRefresh,
+            icon: AppSvgIcon(
+              asset: AppIcons.refresh,
               size: 20,
               color: cs.onSurface,
             ),
@@ -128,7 +127,11 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   onTap: () => setState(() => _roleFilter = "admin"),
                 ),
                 const SizedBox(width: 12),
-                Container(height: 24, width: 1, color: cs.outlineVariant),
+                Container(
+                  height: 24,
+                  width: 1,
+                  color: cs.outlineVariant.withOpacity(0.5),
+                ),
                 const SizedBox(width: 12),
                 _FilterChip(
                   label: "Active",
@@ -198,7 +201,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                     ),
                     Expanded(
                       child: ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        // ✅ Bottom Padding for Floating Navbar
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                         itemCount: filtered.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
@@ -228,7 +232,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 }
 
 // ==================================================
-// SUB WIDGETS
+// SUB WIDGETS (M3 STYLED)
 // ==================================================
 
 class _SearchBox extends StatelessWidget {
@@ -241,27 +245,34 @@ class _SearchBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surfaceVariant,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: "Search by name or email...",
-          hintStyle: TextStyle(color: cs.onSurfaceVariant),
-          border: InputBorder.none,
-          prefixIcon: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedSearch01,
-              size: 22,
-              color: cs.onSurfaceVariant,
-            ),
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      style: TextStyle(color: cs.onSurface),
+      decoration: InputDecoration(
+        hintText: "Search by name or email...",
+        hintStyle: TextStyle(color: cs.onSurfaceVariant.withOpacity(0.5)),
+        filled: true,
+        fillColor: cs.surfaceContainerHighest.withOpacity(0.5),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: AppSvgIcon(
+            asset: AppIcons.search,
+            size: 22,
+            color: cs.onSurfaceVariant,
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        prefixIconConstraints: const BoxConstraints(
+          minWidth: 48,
+          minHeight: 48,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 16,
+          horizontal: 16,
         ),
       ),
     );
@@ -282,15 +293,17 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedUserGroup,
+          AppSvgIcon(
+            asset: AppIcons.user_group,
             size: 64,
             color: cs.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
             "No users found",
-            style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurface),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
           ),
           if (showHint)
             Padding(
@@ -298,7 +311,7 @@ class _EmptyState extends StatelessWidget {
               child: Text(
                 "Try adjusting your filters",
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant,
+                  color: cs.onSurfaceVariant.withOpacity(0.7),
                 ),
               ),
             ),
@@ -320,8 +333,8 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const HugeIcon(
-            icon: HugeIcons.strokeRoundedAlert02,
+          const AppSvgIcon(
+            asset: AppIcons.info,
             size: 48,
             color: Colors.redAccent,
           ),
@@ -355,32 +368,28 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
+    final baseColor = isStatus ? statusColor : cs.primary;
+
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? (isStatus
-                    ? statusColor.withOpacity(0.15)
-                    : cs.primary.withOpacity(0.15))
-              : cs.surfaceVariant,
-          borderRadius: BorderRadius.circular(20),
+              ? baseColor.withOpacity(0.15)
+              : cs.surfaceContainerHighest.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected
-                ? (isStatus ? statusColor : cs.primary)
-                : cs.outlineVariant,
+            color: isSelected ? baseColor : Colors.transparent,
             width: 1.5,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected
-                ? (isStatus ? statusColor : cs.primary)
-                : cs.onSurfaceVariant,
+            color: isSelected ? baseColor : cs.onSurfaceVariant,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             fontSize: 13,
           ),

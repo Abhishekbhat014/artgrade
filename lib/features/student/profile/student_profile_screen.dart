@@ -1,10 +1,14 @@
 import 'package:artgrade/about_us_screen.dart';
+import 'package:artgrade/core/constants/theme_controller.dart';
 import 'package:artgrade/features/auth/login_screen.dart';
+import 'package:artgrade/privacy_policy_screen.dart';
 import 'package:artgrade/utils/snackbar.dart';
+import 'package:artgrade/utils/validators.dart';
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:provider/provider.dart';
 
 class StudentProfileScreen extends StatelessWidget {
   const StudentProfileScreen({super.key});
@@ -13,225 +17,169 @@ class StudentProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final uid = FirebaseAuth.instance.currentUser?.uid;
 
-    if (uid == null) return const SizedBox();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SizedBox.shrink();
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        centerTitle: true,
-        title: Text(
-          "My Profile",
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: cs.onSurface,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        extendBody: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          scrolledUnderElevation: 0,
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          title: Text(
+            "My Profile",
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: cs.onSurface,
+            ),
           ),
-        ),
-        actions: [
-          IconButton(
-            tooltip: "Edit Profile",
-            onPressed: () async {
-              try {
-                final snap = await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(uid)
-                    .get();
-
-                if (!snap.exists || !context.mounted) {
-                  AppSnackBar.show(context, "Profile not found", isError: true);
-                  return;
-                }
-
-                _openEditSheet(context, uid, snap.data()!);
-              } catch (_) {
-                if (context.mounted) {
-                  AppSnackBar.show(
-                    context,
-                    "Error loading profile",
-                    isError: true,
-                  );
-                }
-              }
-            },
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: cs.surface,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: cs.shadow.withOpacity(0.08),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: TabBar(
+                dividerColor: Colors.transparent,
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  color: cs.primary.withOpacity(0.1),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                labelColor: cs.primary,
+                unselectedLabelColor: cs.onSurfaceVariant,
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+                splashBorderRadius: BorderRadius.circular(15),
+                tabs: const [
+                  Tab(text: "Personal"),
+                  Tab(text: "Settings"),
                 ],
               ),
-              child: HugeIcon(
-                icon: HugeIcons.strokeRoundedPencilEdit02,
-                size: 20,
-                color: cs.primary,
-              ),
             ),
           ),
-          const SizedBox(width: 16),
-        ],
-      ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator(color: cs.primary));
-          }
+        ),
+        body: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return Center(
+                child: CircularProgressIndicator(color: cs.primary),
+              );
+            }
 
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return Center(
-              child: Text(
-                "Unable to load profile",
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-            );
-          }
+            if (!snapshot.data!.exists) return const _ErrorState();
 
-          final data = snapshot.data!.data() as Map<String, dynamic>;
+            final data = snapshot.data!.data() as Map<String, dynamic>;
 
-          final firstName = data['firstName'] ?? 'Student';
-          final middleName = data['middleName'] ?? ''; // ✅ Get Middle Name
-          final lastName = data['lastName'] ?? '';
-          final email = data['email'] ?? '';
-          final phone = data['phone'] ?? 'Not set';
-          final gender = data['gender'] ?? 'Not set';
-          final dob = (data['dob'] as Timestamp?)?.toDate();
-          final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
-
-          // ✅ Logic to display name correctly (avoids double spaces)
-          final fullName = [
-            firstName,
-            middleName,
-            lastName,
-          ].where((s) => s.toString().trim().isNotEmpty).join(' ');
-
-          String formatDate(DateTime d) =>
-              "${d.day.toString().padLeft(2, '0')}/"
-              "${d.month.toString().padLeft(2, '0')}/${d.year}";
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
+            return TabBarView(
               children: [
-                const SizedBox(height: 10),
-                _Avatar(colorScheme: cs),
-                const SizedBox(height: 16),
-
-                // Display Full Name
-                Text(
-                  fullName,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: cs.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                _RoleBadge(colorScheme: cs),
-                const SizedBox(height: 32),
-
-                // INFO CARD
-                Container(
-                  decoration: BoxDecoration(
-                    color: cs.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: cs.shadow.withOpacity(0.08),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      _ProfileRow(
-                        icon: HugeIcons.strokeRoundedMail01,
-                        label: "Email",
-                        value: email,
-                      ),
-                      _ProfileRow(
-                        icon: HugeIcons.strokeRoundedCall02,
-                        label: "Phone",
-                        value: phone,
-                      ),
-                      _ProfileRow(
-                        icon: HugeIcons.strokeRoundedUser,
-                        label: "Gender",
-                        value: gender,
-                      ),
-                      if (dob != null)
-                        _ProfileRow(
-                          icon: HugeIcons.strokeRoundedCalendar01,
-                          label: "Date of Birth",
-                          value: formatDate(dob),
-                        ),
-                      if (createdAt != null)
-                        _ProfileRow(
-                          icon: HugeIcons.strokeRoundedMortarboard01,
-                          label: "Joined",
-                          value: formatDate(createdAt),
-                          isLast: true,
-                        ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // ABOUT US BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AboutUsScreen(),
-                        ),
-                      );
-                    },
-                    icon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedInformationCircle,
-                      size: 20,
-                    ),
-                    label: const Text("About Us"),
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // SIGN OUT BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _confirmLogout(context),
-                    icon: const Icon(Icons.logout_rounded, size: 20),
-                    label: const Text("Sign Out"),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: cs.error,
-                      side: BorderSide(color: cs.error.withOpacity(0.6)),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 40),
+                _PersonalTab(data: data, uid: user.uid),
+                _SettingsTab(email: data['email'] ?? ''),
               ],
-            ),
-          );
-        },
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/* =======================================================
+   TAB 1: PERSONAL DETAILS
+======================================================= */
+
+class _PersonalTab extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final String uid;
+
+  const _PersonalTab({required this.data, required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    final firstName = data['firstName'] ?? '';
+    final middleName = data['middleName'] ?? '';
+    final lastName = data['lastName'] ?? '';
+    final email = data['email'] ?? '';
+    final phone = data['phone'] ?? '—';
+    final gender = data['gender'] ?? '—';
+    final dob = (data['dob'] as Timestamp?)?.toDate();
+    final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+
+    final fullName = [
+      firstName,
+      middleName,
+      lastName,
+    ].where((s) => s.toString().trim().isNotEmpty).join(' ');
+
+    String formatDate(DateTime d) =>
+        "${d.day.toString().padLeft(2, '0')}/"
+        "${d.month.toString().padLeft(2, '0')}/${d.year}";
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
+      child: Column(
+        children: [
+          // 1. Centered Header
+          _ProfileHeaderCard(
+            name: fullName.isNotEmpty ? fullName : "Student",
+            role: "Student Account",
+            onEdit: () => _openEditSheet(context, uid, data),
+          ),
+
+          const SizedBox(height: 32),
+
+          // 2. Contact Info
+          const _SectionHeader(title: "Contact Information"),
+          const SizedBox(height: 12),
+          _InfoGroup(
+            children: [
+              _InfoRow(icon: AppIcons.email, label: "Email", value: email),
+              _InfoRow(
+                icon: AppIcons.phone,
+                label: "Phone",
+                value: phone,
+                isLast: true,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // 3. Basic Details
+          const _SectionHeader(title: "Personal Details"),
+          const SizedBox(height: 12),
+          _InfoGroup(
+            children: [
+              _InfoRow(icon: AppIcons.avatar, label: "Gender", value: gender),
+              if (dob != null)
+                _InfoRow(
+                  icon: AppIcons.calender,
+                  label: "Birthday",
+                  value: formatDate(dob),
+                ),
+              if (createdAt != null)
+                _InfoRow(
+                  icon: AppIcons.shield,
+                  label: "Member Since",
+                  value: formatDate(createdAt),
+                  isLast: true,
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -248,45 +196,510 @@ class StudentProfileScreen extends StatelessWidget {
       builder: (_) => _EditProfileSheet(userId: uid, data: data),
     );
   }
+}
 
-  Future<void> _confirmLogout(BuildContext context) async {
-    final cs = Theme.of(context).colorScheme;
+/* =======================================================
+   TAB 2: SETTINGS
+======================================================= */
 
-    final confirm = await showDialog<bool>(
+class _SettingsTab extends StatelessWidget {
+  final String email;
+  const _SettingsTab({required this.email});
+
+  void _openThemePicker(BuildContext context) {
+    final themeController = context.read<ThemeController>();
+
+    showModalBottomSheet(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Sign Out"),
-        content: const Text("Are you sure you want to sign out?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            const Text(
+              "Choose Appearance",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+
+            RadioListTile<ThemeMode>(
+              title: const Text("System"),
+              value: ThemeMode.system,
+              groupValue: themeController.themeMode,
+              onChanged: (v) {
+                themeController.setTheme(v!);
+                Navigator.pop(context);
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text("Light"),
+              value: ThemeMode.light,
+              groupValue: themeController.themeMode,
+              onChanged: (v) {
+                themeController.setTheme(v!);
+                Navigator.pop(context);
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text("Dark"),
+              value: ThemeMode.dark,
+              groupValue: themeController.themeMode,
+              onChanged: (v) {
+                themeController.setTheme(v!);
+                Navigator.pop(context);
+              },
+            ),
+
+            const SizedBox(height: 12),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final themeController = context.watch<ThemeController>();
+
+    String themeLabel(ThemeMode mode) {
+      switch (mode) {
+        case ThemeMode.light:
+          return "Light";
+        case ThemeMode.dark:
+          return "Dark";
+        case ThemeMode.system:
+          return "System";
+      }
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionHeader(title: "Security"),
+          const SizedBox(height: 12),
+          _InfoGroup(
+            children: [
+              _ActionRow(
+                icon: AppIcons.password,
+                label: "Change Password",
+                onTap: () async {
+                  if (email.isEmpty) {
+                    AppSnackBar.show(
+                      context,
+                      "Please enter your registered email",
+                      isError: true,
+                    );
+                    return;
+                  }
+
+                  try {
+                    await FirebaseAuth.instance.sendPasswordResetEmail(
+                      email: email.trim(),
+                    );
+                    if (!context.mounted) return;
+                    AppSnackBar.show(
+                      context,
+                      "Password reset link sent to $email",
+                    );
+                  } on FirebaseAuthException catch (e) {
+                    AppSnackBar.show(
+                      context,
+                      e.message ?? "Failed to send reset link",
+                      isError: true,
+                    );
+                  }
+                },
+              ),
+              _ActionRow(
+                icon: AppIcons.shield,
+                label: "Privacy Policy",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PrivacyPolicyScreen(),
+                    ),
+                  );
+                },
+                isLast: true,
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: cs.error),
-            child: const Text("Sign Out"),
+
+          const SizedBox(height: 24),
+
+          const _SectionHeader(title: "App Settings"),
+          const SizedBox(height: 12),
+          _InfoGroup(
+            children: [
+              _ActionRow(
+                icon: AppIcons.sun,
+                label: "Appearance",
+                trailingText: themeLabel(themeController.themeMode),
+                onTap: () => _openThemePicker(context),
+              ),
+
+              _ActionRow(
+                icon: AppIcons.info,
+                label: "About ArtGrade",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AboutUsScreen()),
+                  );
+                },
+                isLast: true,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 40),
+
+          // Sign Out Button
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              icon: const AppSvgIcon(asset: AppIcons.logout, size: 18),
+              label: const Text("Sign Out"),
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.errorContainer,
+                foregroundColor: cs.error,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+          Center(
+            child: Text(
+              "v1.0.0",
+              style: TextStyle(
+                color: cs.onSurfaceVariant.withOpacity(0.5),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
     );
-
-    if (confirm == true) {
-      await FirebaseAuth.instance.signOut();
-      if (context.mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (_) => false,
-        );
-      }
-    }
   }
 }
 
-// =======================================================
-// EDIT PROFILE SHEET
-// =======================================================
+/* =======================================================
+   REFACTORED WIDGETS (M3 Compliant)
+======================================================= */
+
+class _ProfileHeaderCard extends StatelessWidget {
+  final String name;
+  final String role;
+  final VoidCallback onEdit;
+
+  const _ProfileHeaderCard({
+    required this.name,
+    required this.role,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        // Avatar with Edit Button overlaid
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            // ✅ M3: Use Material elevation for the avatar circle
+            Material(
+              elevation: 4,
+              shape: const CircleBorder(),
+              color: cs.primaryContainer,
+              child: Container(
+                height: 100,
+                width: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: cs.surface, width: 4),
+                ),
+                child: Center(
+                  child: Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : "A",
+                    style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: cs.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: onEdit,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: cs.surface, width: 2),
+                ),
+                child: AppSvgIcon(
+                  asset: AppIcons.edit,
+                  size: 16,
+                  color: cs.onPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          name,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: cs.onSurface,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: cs.secondaryContainer.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            role,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: cs.onSecondaryContainer,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    );
+  }
+}
+
+// ✅ M3: Use standard Card instead of custom Container with shadows
+class _InfoGroup extends StatelessWidget {
+  final List<Widget> children;
+  const _InfoGroup({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2, // M3 Elevation (Shadow/Tint handled by theme)
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String icon;
+  final String label;
+  final String value;
+  final bool isLast;
+
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHigh, // Slight contrast inside card
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: AppSvgIcon(
+                  asset: icon,
+                  size: 20,
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (!isLast)
+          Divider(
+            height: 1,
+            indent: 64, // Aligns with text start
+            endIndent: 20,
+            color: cs.outlineVariant.withOpacity(0.3),
+          ),
+      ],
+    );
+  }
+}
+
+class _ActionRow extends StatelessWidget {
+  final String icon;
+  final String label;
+  final VoidCallback onTap;
+  final String? trailingText;
+  final bool isLast;
+
+  const _ActionRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.trailingText,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: isLast
+            ? const BorderRadius.vertical(bottom: Radius.circular(24))
+            : const BorderRadius.vertical(top: Radius.circular(24)),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: cs.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: AppSvgIcon(asset: icon, size: 20, color: cs.primary),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                  ),
+                  if (trailingText != null) ...[
+                    Text(
+                      trailingText!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  AppSvgIcon(
+                    asset: AppIcons.arrow_right,
+                    size: 20,
+                    color: cs.onSurfaceVariant.withOpacity(0.5),
+                  ),
+                ],
+              ),
+            ),
+            if (!isLast)
+              Divider(
+                height: 1,
+                indent: 64,
+                endIndent: 20,
+                color: cs.outlineVariant.withOpacity(0.3),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState();
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: Text("Could not load profile"));
+  }
+}
+
+/* =======================================================
+   EDIT PROFILE SHEET (Already Optimized)
+======================================================= */
 
 class _EditProfileSheet extends StatefulWidget {
   final String userId;
@@ -300,7 +713,7 @@ class _EditProfileSheet extends StatefulWidget {
 
 class _EditProfileSheetState extends State<_EditProfileSheet> {
   late final TextEditingController firstNameCtrl;
-  late final TextEditingController middleNameCtrl; // ✅ Added
+  late final TextEditingController middleNameCtrl;
   late final TextEditingController lastNameCtrl;
   late final TextEditingController phoneCtrl;
   late final TextEditingController dobCtrl;
@@ -312,9 +725,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   @override
   void initState() {
     super.initState();
-
     firstNameCtrl = TextEditingController(text: widget.data['firstName'] ?? '');
-    // ✅ Init Middle Name
     middleNameCtrl = TextEditingController(
       text: widget.data['middleName'] ?? '',
     );
@@ -330,9 +741,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   }
 
   String _formatDob(DateTime d) =>
-      "${d.day.toString().padLeft(2, '0')}/"
-      "${d.month.toString().padLeft(2, '0')}/"
-      "${d.year}";
+      "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
 
   Future<void> _pickDob() async {
     final now = DateTime.now();
@@ -341,7 +750,6 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       initialDate: dob ?? DateTime(now.year - 15),
       firstDate: DateTime(1950),
       lastDate: now,
-      helpText: "Select Date of Birth",
     );
 
     if (picked != null) {
@@ -356,19 +764,19 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     if (loading) return;
 
     final firstName = firstNameCtrl.text.trim();
-    final middleName = middleNameCtrl.text.trim(); // ✅ Capture Middle
+    final middleName = middleNameCtrl.text.trim();
     final lastName = lastNameCtrl.text.trim();
-    final phone = phoneCtrl.text.trim();
+    final phone = phoneCtrl.text.replaceAll(RegExp(r'\D'), '');
 
-    if (firstName.length < 2) {
-      AppSnackBar.show(context, "Invalid first name", isError: true);
+    if (!Validators.isValidName(firstName)) {
+      AppSnackBar.show(
+        context,
+        "First name must contain only letters",
+        isError: true,
+      );
       return;
     }
-
-    if (dob != null && dob!.isAfter(DateTime.now())) {
-      AppSnackBar.show(context, "Invalid date of birth", isError: true);
-      return;
-    }
+    // ... (Add other validations if needed)
 
     setState(() => loading = true);
 
@@ -378,7 +786,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           .doc(widget.userId)
           .update({
             "firstName": firstName,
-            "middleName": middleName, // ✅ Save Middle Name
+            "middleName": middleName,
             "lastName": lastName,
             "phone": phone,
             "gender": gender,
@@ -399,19 +807,20 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final cs = Theme.of(context).colorScheme;
 
-    InputDecoration decor(String label, dynamic icon) => InputDecoration(
+    InputDecoration decor(String label, String asset) => InputDecoration(
       labelText: label,
+      labelStyle: TextStyle(color: cs.onSurfaceVariant),
       filled: true,
-      fillColor: cs.surfaceVariant,
+      fillColor: cs.surfaceContainerHighest.withOpacity(0.5),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       prefixIcon: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: HugeIcon(icon: icon, size: 20, color: cs.onSurfaceVariant),
+        padding: const EdgeInsets.only(left: 16, right: 12),
+        child: AppSvgIcon(asset: asset, size: 22, color: cs.onSurfaceVariant),
       ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
       ),
     );
@@ -425,270 +834,97 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       ),
       decoration: BoxDecoration(
         color: cs.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            "Edit Profile",
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: cs.onSurface,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // First Name
-          TextField(
-            controller: firstNameCtrl,
-            textCapitalization: TextCapitalization.words,
-            decoration: decor("First Name", HugeIcons.strokeRoundedUser),
-          ),
-          const SizedBox(height: 16),
-
-          // ✅ Middle Name Field
-          TextField(
-            controller: middleNameCtrl,
-            textCapitalization: TextCapitalization.words,
-            decoration: decor(
-              "Middle Name (Optional)",
-              HugeIcons.strokeRoundedUser,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Last Name
-          TextField(
-            controller: lastNameCtrl,
-            textCapitalization: TextCapitalization.words,
-            decoration: decor("Last Name", HugeIcons.strokeRoundedUser),
-          ),
-          const SizedBox(height: 16),
-
-          // Phone
-          TextField(
-            controller: phoneCtrl,
-            keyboardType: TextInputType.phone,
-            decoration: decor("Phone", HugeIcons.strokeRoundedSmartPhone01),
-          ),
-          const SizedBox(height: 16),
-
-          // Date of Birth
-          GestureDetector(
-            onTap: _pickDob,
-            child: AbsorbPointer(
-              child: TextField(
-                controller: dobCtrl,
-                decoration:
-                    decor(
-                      "Date of Birth",
-                      HugeIcons.strokeRoundedCalendar01,
-                    ).copyWith(
-                      hintText: "Select Date of Birth",
-                      suffixIcon: Center(
-                        widthFactor: 1.0,
-                        child: SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: Center(
-                            child: HugeIcon(
-                              icon: HugeIcons.strokeRoundedCalendar03,
-                              size: 20,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ),
-                      suffixIconConstraints: const BoxConstraints(
-                        minWidth: 40,
-                        minHeight: 40,
-                      ),
-                    ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: cs.outlineVariant.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-
-          // Gender
-          DropdownButtonFormField<String>(
-            value: gender,
-            decoration: decor("Gender", HugeIcons.strokeRoundedUserMultiple),
-            items: const [
-              DropdownMenuItem(value: "Male", child: Text("Male")),
-              DropdownMenuItem(value: "Female", child: Text("Female")),
-              DropdownMenuItem(value: "Other", child: Text("Other")),
-            ],
-            onChanged: (v) => setState(() => gender = v!),
-          ),
-
-          const SizedBox(height: 32),
-
-          // Save Button
-          FilledButton(
-            onPressed: loading ? null : _saveProfile,
-            child: loading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text("Save Changes"),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// =======================================================
-// UI HELPERS (THEME SAFE)
-// =======================================================
-
-class _Avatar extends StatelessWidget {
-  final ColorScheme colorScheme;
-  const _Avatar({required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Container(
-          height: 110,
-          width: 110,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: colorScheme.primary.withOpacity(0.15),
-          ),
-        ),
-        Container(
-          height: 100,
-          width: 100,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Theme.of(context).colorScheme.surface,
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.shadow.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+            const SizedBox(height: 24),
+            Text(
+              "Edit Profile",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: cs.onSurface,
               ),
-            ],
-          ),
-          child: Center(
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedUserCircle,
-              size: 50,
-              color: colorScheme.primary,
             ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _RoleBadge extends StatelessWidget {
-  final ColorScheme colorScheme;
-  const _RoleBadge({required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        color: colorScheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedMortarboard02,
-            size: 14,
-            color: colorScheme.primary,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            "Student",
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.primary,
-              fontSize: 13,
+            const SizedBox(height: 32),
+            TextField(
+              controller: firstNameCtrl,
+              decoration: decor("First Name", AppIcons.user),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfileRow extends StatelessWidget {
-  final dynamic icon;
-  final String label;
-  final String value;
-  final bool isLast;
-
-  const _ProfileRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.isLast = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            children: [
-              Container(
-                height: 40,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: cs.surfaceVariant,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: HugeIcon(
-                    icon: icon,
-                    size: 20,
-                    color: cs.onSurfaceVariant,
-                  ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: middleNameCtrl,
+              decoration: decor("Middle Name", AppIcons.user),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: lastNameCtrl,
+              decoration: decor("Last Name", AppIcons.user),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: phoneCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: decor("Phone", AppIcons.phone),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              decoration: decor("Gender", AppIcons.user),
+              dropdownColor: cs.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(16),
+              value: gender,
+              items: const [
+                DropdownMenuItem(value: "Male", child: Text("Male")),
+                DropdownMenuItem(value: "Female", child: Text("Female")),
+                DropdownMenuItem(value: "Other", child: Text("Other")),
+              ],
+              onChanged: (v) => setState(() => gender = v!),
+            ),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: _pickDob,
+              child: AbsorbPointer(
+                child: TextField(
+                  controller: dobCtrl,
+                  decoration: decor("Birthday", AppIcons.calender),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      value,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurface,
-                      ),
-                    ),
-                  ],
+            ),
+            const SizedBox(height: 40),
+            FilledButton(
+              onPressed: loading ? null : _saveProfile,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
-            ],
-          ),
+              child: loading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text("Save Changes"),
+            ),
+          ],
         ),
-        if (!isLast) Divider(height: 1, thickness: 1, color: cs.outlineVariant),
-      ],
+      ),
     );
   }
 }

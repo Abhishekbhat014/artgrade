@@ -1,5 +1,5 @@
+import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 class DynamicFieldsEditor extends StatefulWidget {
   final Map<String, dynamic> initialFields;
@@ -45,8 +45,7 @@ class _DynamicFieldsEditorState extends State<DynamicFieldsEditor> {
 
   void _emit() {
     widget.onChanged({
-      for (final e in _controllers.entries)
-        e.key: e.value.text.trim(),
+      for (final e in _controllers.entries) e.key: e.value.text.trim(),
     });
   }
 
@@ -65,10 +64,7 @@ class _DynamicFieldsEditorState extends State<DynamicFieldsEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Additional Fields",
-          style: theme.textTheme.titleMedium,
-        ),
+        Text("Additional Fields", style: theme.textTheme.titleMedium),
         const SizedBox(height: 12),
 
         ..._controllers.entries.map((entry) {
@@ -79,15 +75,13 @@ class _DynamicFieldsEditorState extends State<DynamicFieldsEditor> {
                 Expanded(
                   child: TextField(
                     controller: entry.value,
-                    decoration: InputDecoration(
-                      labelText: entry.key,
-                    ),
+                    decoration: InputDecoration(labelText: entry.key),
                     onChanged: (_) => _emit(),
                   ),
                 ),
                 IconButton(
-                  icon: const HugeIcon(
-                    icon: HugeIcons.strokeRoundedDelete02,
+                  icon: const AppSvgIcon(
+                    asset: AppIcons.delete,
                     size: 18,
                     color: Colors.redAccent,
                   ),
@@ -100,7 +94,7 @@ class _DynamicFieldsEditorState extends State<DynamicFieldsEditor> {
 
         TextButton.icon(
           onPressed: _addField,
-          icon: const Icon(Icons.add),
+          icon: const AppSvgIcon(asset: AppIcons.plus),
           label: const Text("Add Field"),
         ),
       ],
