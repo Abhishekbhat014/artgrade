@@ -115,4 +115,6 @@ class AppIcons {
   static const view_off = 'assets/icons/view_off.svg';
 
   static const vision = 'assets/icons/vision.svg';
+  static const google = 'assets/icons/google.svg';
+  static const camera_add = 'assets/icons/camera_add.svg';
 }

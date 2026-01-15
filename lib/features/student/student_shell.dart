@@ -27,6 +27,7 @@ class _StudentShellState extends State<StudentShell> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -48,17 +49,14 @@ class _StudentShellState extends State<StudentShell> {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
         child: Material(
-          // ✅ High Elevation: Adds Shadow (Light) & Surface Tint (Dark)
           elevation: 12,
-
-          // ✅ Standard Shadow Color
           shadowColor: Colors.black.withOpacity(0.4),
-
-          // ✅ Round Corners
           borderRadius: BorderRadius.circular(15),
 
-          // ✅ Use Card Theme Color: Lighter than Scaffold in Dark Mode
-          color: theme.cardTheme.color,
+          // 🛑 COLOR LOGIC:
+          // Light Mode -> Black Bar (0xFF1E1E1E)
+          // Dark Mode -> White/Light Bar (0xFFF5F5F5)
+          color: isDark ? const Color(0xFFF5F5F5) : const Color(0xFF1E1E1E),
 
           child: Container(
             height: 70,
@@ -73,6 +71,7 @@ class _StudentShellState extends State<StudentShell> {
                   isSelected: _currentIndex == 0,
                   onTap: () => setState(() => _currentIndex = 0),
                   colorScheme: colorScheme,
+                  isDark: isDark,
                 ),
                 _NavBarItem(
                   asset: AppIcons.book,
@@ -80,6 +79,7 @@ class _StudentShellState extends State<StudentShell> {
                   isSelected: _currentIndex == 1,
                   onTap: () => setState(() => _currentIndex = 1),
                   colorScheme: colorScheme,
+                  isDark: isDark,
                 ),
                 _NavBarItem(
                   asset: AppIcons.progress,
@@ -87,6 +87,7 @@ class _StudentShellState extends State<StudentShell> {
                   isSelected: _currentIndex == 2,
                   onTap: () => setState(() => _currentIndex = 2),
                   colorScheme: colorScheme,
+                  isDark: isDark,
                 ),
                 _NavBarItem(
                   asset: AppIcons.user,
@@ -94,6 +95,7 @@ class _StudentShellState extends State<StudentShell> {
                   isSelected: _currentIndex == 3,
                   onTap: () => setState(() => _currentIndex = 3),
                   colorScheme: colorScheme,
+                  isDark: isDark,
                 ),
               ],
             ),
@@ -111,6 +113,7 @@ class _NavBarItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final ColorScheme colorScheme;
+  final bool isDark; // Added to handle unselected icon color
 
   const _NavBarItem({
     required this.asset,
@@ -118,6 +121,7 @@ class _NavBarItem extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.colorScheme,
+    required this.isDark,
   });
 
   @override
@@ -144,9 +148,15 @@ class _NavBarItem extends StatelessWidget {
             AppSvgIcon(
               asset: asset,
               size: 24,
+              // 🛑 ICON COLOR LOGIC:
+              // Selected -> Primary
+              // Unselected (Light Mode/Black Bar) -> Light Grey (0xFFB0B0B0)
+              // Unselected (Dark Mode/White Bar) -> Dark Grey (0xFF1E1E1E)
               color: isSelected
                   ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant.withOpacity(0.6),
+                  : (isDark
+                        ? const Color(0xFF1E1E1E)
+                        : const Color(0xFFB0B0B0)),
             ),
             if (isSelected) ...[
               const SizedBox(width: 8),

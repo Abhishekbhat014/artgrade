@@ -1,6 +1,7 @@
+import 'dart:io';
 import 'package:artgrade/about_us_screen.dart';
 import 'package:artgrade/core/constants/theme_controller.dart';
-import 'package:artgrade/features/auth/login_screen.dart';
+import 'package:artgrade/core/services/cloudinary_service.dart';
 import 'package:artgrade/privacy_policy_screen.dart';
 import 'package:artgrade/utils/snackbar.dart';
 import 'package:artgrade/utils/validators.dart';
@@ -8,6 +9,7 @@ import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class AdminProfileScreen extends StatelessWidget {
@@ -110,17 +112,21 @@ class _PersonalTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firstName = data['firstName'] ?? '';
-    final middleName = data['middleName'] ?? '';
     final lastName = data['lastName'] ?? '';
     final email = data['email'] ?? '';
     final phone = data['phone'] ?? '—';
-    final gender = data['gender'] ?? '—';
+    // Capitalize first letter for display if possible
+    final rawGender = data['gender']?.toString() ?? '—';
+    final gender = rawGender.isNotEmpty
+        ? rawGender[0].toUpperCase() + rawGender.substring(1)
+        : rawGender;
+
     final dob = (data['dob'] as Timestamp?)?.toDate();
     final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+    final photoUrl = data['photoUrl'];
 
     final fullName = [
       firstName,
-      middleName,
       lastName,
     ].where((s) => s.toString().trim().isNotEmpty).join(' ');
 
@@ -136,6 +142,7 @@ class _PersonalTab extends StatelessWidget {
           _ProfileHeaderCard(
             name: fullName.isNotEmpty ? fullName : "Administrator",
             role: "Administrator",
+            photoUrl: photoUrl,
             onEdit: () => _openEditSheet(context, uid, data),
           ),
 
@@ -375,12 +382,8 @@ class _SettingsTab extends StatelessWidget {
               ),
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
-                if (!context.mounted) return;
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (_) => false,
-                );
+                // ✅ DO NOTHING ELSE
+                // AuthGate will automatically show LoginScreen
               },
             ),
           ),
@@ -402,18 +405,20 @@ class _SettingsTab extends StatelessWidget {
 }
 
 /* =======================================================
-   REFACTORED WIDGETS (M3 Compliant)
+   REFACTORED WIDGETS
 ======================================================= */
 
 class _ProfileHeaderCard extends StatelessWidget {
   final String name;
   final String role;
+  final String? photoUrl;
   final VoidCallback onEdit;
 
   const _ProfileHeaderCard({
     required this.name,
     required this.role,
     required this.onEdit,
+    this.photoUrl,
   });
 
   @override
@@ -422,7 +427,6 @@ class _ProfileHeaderCard extends StatelessWidget {
 
     return Column(
       children: [
-        // Avatar with Edit Button overlaid
         Stack(
           alignment: Alignment.bottomRight,
           children: [
@@ -437,15 +441,34 @@ class _ProfileHeaderCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: cs.surface, width: 4),
                 ),
-                child: Center(
-                  child: Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : "A",
-                    style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: cs.onPrimaryContainer,
-                    ),
-                  ),
+                child: ClipOval(
+                  child: photoUrl != null && photoUrl!.isNotEmpty
+                      ? Image.network(
+                          photoUrl!,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Center(
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : "A",
+                              style: TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: cs.onPrimaryContainer,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : "A",
+                            style: TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                              color: cs.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -475,7 +498,6 @@ class _ProfileHeaderCard extends StatelessWidget {
             fontWeight: FontWeight.bold,
             color: cs.onSurface,
           ),
-          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 4),
         Container(
@@ -714,31 +736,36 @@ class _EditProfileSheet extends StatefulWidget {
 
 class _EditProfileSheetState extends State<_EditProfileSheet> {
   late final TextEditingController firstNameCtrl;
-  late final TextEditingController middleNameCtrl;
   late final TextEditingController lastNameCtrl;
   late final TextEditingController phoneCtrl;
   late final TextEditingController dobCtrl;
+  String? photoUrl;
 
   late String gender;
   DateTime? dob;
   bool loading = false;
 
   @override
+  @override
   void initState() {
     super.initState();
+
     firstNameCtrl = TextEditingController(text: widget.data['firstName'] ?? '');
-    middleNameCtrl = TextEditingController(
-      text: widget.data['middleName'] ?? '',
-    );
     lastNameCtrl = TextEditingController(text: widget.data['lastName'] ?? '');
     phoneCtrl = TextEditingController(text: widget.data['phone'] ?? '');
-    gender = widget.data['gender'] ?? 'Male';
+
+    final dbGender = widget.data['gender']?.toString().toLowerCase();
+    const validGenders = ['male', 'female', 'other'];
+    gender = validGenders.contains(dbGender) ? dbGender! : 'male';
 
     final ts = widget.data['dob'];
     if (ts is Timestamp) {
       dob = ts.toDate();
     }
     dobCtrl = TextEditingController(text: dob != null ? _formatDob(dob!) : '');
+
+    // ✅ IMPORTANT
+    photoUrl = widget.data['photoUrl'];
   }
 
   String _formatDob(DateTime d) =>
@@ -761,11 +788,45 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     }
   }
 
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (picked == null) return;
+
+    setState(() => loading = true);
+
+    try {
+      final imageFile = File(picked.path);
+      final uploadedUrl = await CloudinaryService.uploadProfileImage(imageFile);
+
+      // ✅ UI updates instantly
+      setState(() {
+        photoUrl = uploadedUrl;
+      });
+
+      // ✅ Firestore stays in sync
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .update({"photoUrl": uploadedUrl, "updatedAt": Timestamp.now()});
+
+      if (!mounted) return;
+      AppSnackBar.show(context, "Profile photo updated");
+    } catch (e) {
+      AppSnackBar.show(context, "Failed to upload photo", isError: true);
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (loading) return;
 
     final firstName = firstNameCtrl.text.trim();
-    final middleName = middleNameCtrl.text.trim();
     final lastName = lastNameCtrl.text.trim();
     final phone = phoneCtrl.text.replaceAll(RegExp(r'\D'), '');
 
@@ -786,7 +847,6 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           .doc(widget.userId)
           .update({
             "firstName": firstName,
-            "middleName": middleName,
             "lastName": lastName,
             "phone": phone,
             "gender": gender,
@@ -825,104 +885,127 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       ),
     );
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        24,
-        24,
-        24,
-        MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: cs.outlineVariant.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              "Edit Profile",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: cs.onSurface,
-              ),
-            ),
-            const SizedBox(height: 32),
-            TextField(
-              controller: firstNameCtrl,
-              decoration: decor("First Name", AppIcons.user),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: middleNameCtrl,
-              decoration: decor("Middle Name", AppIcons.user),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: lastNameCtrl,
-              decoration: decor("Last Name", AppIcons.user),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: phoneCtrl,
-              keyboardType: TextInputType.phone,
-              decoration: decor("Phone", AppIcons.phone),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              isExpanded: true,
-              decoration: decor("Gender", AppIcons.user),
-              dropdownColor: cs.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(16),
-              value: gender,
-              items: const [
-                DropdownMenuItem(value: "Male", child: Text("Male")),
-                DropdownMenuItem(value: "Female", child: Text("Female")),
-                DropdownMenuItem(value: "Other", child: Text("Other")),
-              ],
-              onChanged: (v) => setState(() => gender = v!),
-            ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: _pickDob,
-              child: AbsorbPointer(
-                child: TextField(
-                  controller: dobCtrl,
-                  decoration: decor("Birthday", AppIcons.calender),
+    // ✅ WRAP WITH GestureDetector for Keyboard Dismissal
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Container(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: cs.outlineVariant.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-            const SizedBox(height: 40),
-            FilledButton(
-              onPressed: loading ? null : _saveProfile,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+              const SizedBox(height: 24),
+              Text(
+                "Edit Profile",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: cs.onSurface,
                 ),
               ),
-              child: loading
-                  ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text("Save Changes"),
-            ),
-          ],
+              const SizedBox(height: 32),
+              GestureDetector(
+                onTap: loading ? null : _pickAndUploadImage,
+                child: CircleAvatar(
+                  radius: 44,
+                  backgroundColor: cs.surfaceContainerHighest,
+                  backgroundImage: photoUrl != null
+                      ? NetworkImage(photoUrl!)
+                      : null,
+                  child: photoUrl == null
+                      ? AppSvgIcon(
+                          asset: AppIcons.camera_add,
+                          size: 32,
+                          color: cs.onSurfaceVariant,
+                        )
+                      : null,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+              Text(
+                "Tap to change profile photo",
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: firstNameCtrl,
+                decoration: decor("First Name", AppIcons.user),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: lastNameCtrl,
+                decoration: decor("Last Name", AppIcons.user),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: decor("Phone", AppIcons.phone),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                isExpanded: true,
+                decoration: decor("Gender", AppIcons.user),
+                dropdownColor: cs.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(16),
+                value: gender,
+                items: const [
+                  DropdownMenuItem(value: "male", child: Text("Male")),
+                  DropdownMenuItem(value: "female", child: Text("Female")),
+                  DropdownMenuItem(value: "other", child: Text("Other")),
+                ],
+                onChanged: (v) => setState(() => gender = v!),
+              ),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: _pickDob,
+                child: AbsorbPointer(
+                  child: TextField(
+                    controller: dobCtrl,
+                    decoration: decor("Birthday", AppIcons.calender),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
+              FilledButton(
+                onPressed: loading ? null : _saveProfile,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: loading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text("Save Changes"),
+              ),
+            ],
+          ),
         ),
       ),
     );

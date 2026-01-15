@@ -122,38 +122,23 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-class SplashWrapper extends StatefulWidget {
+class SplashWrapper extends StatelessWidget {
   const SplashWrapper({super.key});
 
-  @override
-  State<SplashWrapper> createState() => _SplashWrapperState();
-}
-
-class _SplashWrapperState extends State<SplashWrapper> {
-  bool _showSplash = true;
-
-  @override
-  void initState() {
-    super.initState();
-    // Keep splash for 2.5 seconds to allow animation to complete nicely
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        setState(() => _showSplash = false);
-      }
-    });
+  Future<void> _delay() async {
+    await Future.delayed(const Duration(milliseconds: 2500));
   }
 
   @override
   Widget build(BuildContext context) {
-    // Uses AnimatedSwitcher for a smooth dissolve between Splash and App
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 500),
-      transitionBuilder: (child, animation) {
-        return FadeTransition(opacity: animation, child: child);
+    return FutureBuilder(
+      future: _delay(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SplashScreen();
+        }
+        return const AuthGate();
       },
-      child: _showSplash
-          ? const SplashScreen(key: ValueKey('splash'))
-          : const AuthGate(key: ValueKey('auth_gate')),
     );
   }
 }

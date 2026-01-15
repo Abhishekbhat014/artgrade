@@ -1,9 +1,11 @@
+import 'package:artgrade/core/complete_profile_screen.dart';
 import 'package:artgrade/features/admin/admin_shell.dart';
 import 'package:artgrade/features/student/student_shell.dart';
 import 'package:artgrade/widgets/app_svg_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../features/auth/login_screen.dart';
 
 class AuthGate extends StatelessWidget {
@@ -13,61 +15,81 @@ class AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+      builder: (context, authSnap) {
+        if (authSnap.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        if (!snapshot.hasData) {
-          return const LoginScreen();
+        if (!authSnap.hasData) {
+          return const KeyedSubtree(
+            key: ValueKey('logged_out'),
+            child: LoginScreen(),
+          );
         }
 
-        final user = snapshot.data!;
-        final uid = user.uid;
-
+        final uid = authSnap.data!.uid;
         return KeyedSubtree(
-          key: ValueKey(uid),
-          child: StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('users')
-                .doc(uid)
-                .snapshots(),
-            builder: (context, userSnap) {
-              if (userSnap.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              if (!userSnap.hasData || !userSnap.data!.exists) {
-                return const Scaffold(
-                  body: Center(child: Text("Setting up your account…")),
-                );
-              }
-
-              final data = userSnap.data!.data() as Map<String, dynamic>;
-              final role = data['role'] ?? 'student';
-              final active = data['active'] ?? true;
-
-              if (!active) {
-                return const _DisabledAccountScreen();
-              }
-
-              return role == 'admin'
-                  ? AdminShell(key: ValueKey(uid))
-                  : StudentShell(key: ValueKey(uid));
-            },
-          ),
+          key: ValueKey('logged_in_$uid'),
+          child: _UserRouter(uid: uid),
         );
       },
     );
   }
 }
 
+class _UserRouter extends StatelessWidget {
+  final String uid;
+  const _UserRouter({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots(),
+      builder: (context, userSnap) {
+        if (userSnap.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!userSnap.hasData || !userSnap.data!.exists) {
+          return const Scaffold(
+            body: Center(child: Text("Setting up your account…")),
+          );
+        }
+
+        final data = userSnap.data!.data() as Map<String, dynamic>;
+
+        final role = data['role'] ?? 'student';
+        final active = data['active'] ?? true;
+        final profileComplete = data['profileComplete'] ?? false;
+
+        // 🚫 Disabled account
+        if (!active) {
+          return const _DisabledAccountScreen();
+        }
+
+        // 🧩 Incomplete profile
+        if (!profileComplete) {
+          return const CompleteProfileScreen();
+        }
+
+        // 🏁 Final destination
+        return role == 'admin'
+            ? AdminShell(key: ValueKey('admin_$uid'))
+            : StudentShell(key: ValueKey('student_$uid'));
+      },
+    );
+  }
+}
+
 // =======================================================
-// DISABLED ACCOUNT SCREEN (THEME SAFE)
+// 🚫 DISABLED ACCOUNT SCREEN (UNCHANGED)
 // =======================================================
 
 class _DisabledAccountScreen extends StatelessWidget {
@@ -80,7 +102,6 @@ class _DisabledAccountScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -102,7 +123,6 @@ class _DisabledAccountScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ICON
                   Container(
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
@@ -118,7 +138,6 @@ class _DisabledAccountScreen extends StatelessWidget {
 
                   const SizedBox(height: 28),
 
-                  // TITLE
                   Text(
                     "Account Disabled",
                     textAlign: TextAlign.center,
@@ -130,7 +149,6 @@ class _DisabledAccountScreen extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // MESSAGE
                   Text(
                     "Your ArtGrade account has been temporarily disabled by the administrator.\n\nIf you believe this is a mistake, please contact support for assistance.",
                     textAlign: TextAlign.center,
@@ -142,7 +160,6 @@ class _DisabledAccountScreen extends StatelessWidget {
 
                   const SizedBox(height: 32),
 
-                  // ACTION BUTTON
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
@@ -169,7 +186,6 @@ class _DisabledAccountScreen extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // FOOTER
                   Text(
                     "ArtGrade • Learn with confidence",
                     style: theme.textTheme.labelSmall?.copyWith(

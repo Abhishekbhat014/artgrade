@@ -5,7 +5,7 @@ class AppTheme {
   AppTheme._();
 
   // =========================
-  // 🌞 LIGHT THEME (Smoother Shadows)
+  // 🌞 LIGHT THEME (White Body + Black Navbar)
   // =========================
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
@@ -40,19 +40,26 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: Colors.white,
       surfaceTintColor: Colors.white,
-      // ☁️ SMOOTHER: Reduced opacity from 0.4 to 0.15 for a soft, natural drop shadow
       shadowColor: Colors.black.withOpacity(0.15),
-      elevation: 6, // Slight bump in elevation helps blur the softer shadow
+      elevation: 6,
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
 
+    // ✅ LIGHT MODE NAVBAR: Black Background
     navigationBarTheme: NavigationBarThemeData(
       height: 70,
-      elevation: 2,
-      backgroundColor: AppColors.surface,
-      indicatorColor: AppColors.primary.withOpacity(0.15),
+      elevation: 0,
+      backgroundColor: const Color(0xFF1E1E1E), // 🖤 Dark Grey/Black
+      surfaceTintColor: Colors.transparent,
+      indicatorColor: AppColors.primary,
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return const IconThemeData(color: Colors.white);
+        }
+        return const IconThemeData(color: Color(0xFFB0B0B0)); // Light Grey
+      }),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return const TextStyle(
@@ -64,14 +71,27 @@ class AppTheme {
         return const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: AppColors.onSurface,
+          color: Color(0xFFB0B0B0),
         );
       }),
+    ),
+
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: Color(0xFF1E1E1E),
+      elevation: 0,
+      selectedItemColor: AppColors.primary,
+      unselectedItemColor: Color(0xFFB0B0B0),
+      type: BottomNavigationBarType.fixed,
+      selectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+      unselectedLabelStyle: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
     ),
   );
 
   // =========================
-  // 🌙 DARK THEME (Subtle Glow)
+  // 🌙 DARK THEME (Dark Body + White/Light Navbar)
   // =========================
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
@@ -89,15 +109,11 @@ class AppTheme {
 
     scaffoldBackgroundColor: const Color(0xFF141414),
 
-    // ✅ FIXED CARD THEME
     cardTheme: CardThemeData(
       color: const Color(0xFF1E1E1E),
-      surfaceTintColor: AppColors.primary, // Keeps the slight surface tint
-      // ☁️ SMOOTHER: Reduced from 0.4 to 0.25.
-      // This keeps the colored "glow" but removes the harsh neon edge.
+      surfaceTintColor: AppColors.primary,
       shadowColor: AppColors.primary.withOpacity(0.25),
-
-      elevation: 6, // Higher elevation = more blur radius = smoother look
+      elevation: 6,
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -117,19 +133,27 @@ class AppTheme {
       ),
     ),
 
+    // ✅ DARK MODE NAVBAR: White/Light Background
     navigationBarTheme: NavigationBarThemeData(
       height: 70,
       elevation: 8,
-      // ☁️ SMOOTHER: Reduced black shadow opacity to blend better with dark background
-      shadowColor: Colors.black.withOpacity(0.3),
-      backgroundColor: const Color(0xFF1E1E1E),
-      indicatorColor: AppColors.primary,
+      shadowColor: Colors.white.withOpacity(0.1),
+
+      // ☁️ BACKGROUND: Light Grey / White
+      backgroundColor: const Color(0xFFF5F5F5),
+      surfaceTintColor: Colors.transparent,
+
+      indicatorColor: AppColors.primary.withOpacity(0.2), // Softer tint
+
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: Colors.black);
+          // Selected: Primary Color (Darker for contrast on white)
+          return const IconThemeData(color: AppColors.primary);
         }
-        return const IconThemeData(color: Color(0xFFE0E0E0));
+        // Unselected: Dark Grey (visible on white bg)
+        return const IconThemeData(color: Color(0xFF1E1E1E));
       }),
+
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return const TextStyle(
@@ -141,9 +165,23 @@ class AppTheme {
         return const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: Color(0xFFE0E0E0),
+          color: Color(0xFF1E1E1E), // Dark text
         );
       }),
+    ),
+
+    // ✅ Fallback for BottomNavigationBar
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: Color(0xFFF5F5F5), // ☁️ White/Light
+      elevation: 0,
+      selectedItemColor: AppColors.primary,
+      unselectedItemColor: Color(0xFF1E1E1E), // Dark Grey Icons
+      type: BottomNavigationBarType.fixed,
+      selectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+      unselectedLabelStyle: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
     ),
   );
 }

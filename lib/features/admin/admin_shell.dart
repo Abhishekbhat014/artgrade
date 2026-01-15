@@ -26,6 +26,8 @@ class _AdminShellState extends State<AdminShell> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    // ✅ Check if we are in Dark Mode
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -33,7 +35,6 @@ class _AdminShellState extends State<AdminShell> {
       // ✅ 1. Allow content to scroll behind the navbar
       extendBody: true,
 
-      // Body wrapped in Theme to prevent AppBar scroll color change
       body: Theme(
         data: theme.copyWith(
           appBarTheme: theme.appBarTheme.copyWith(
@@ -44,20 +45,18 @@ class _AdminShellState extends State<AdminShell> {
         child: IndexedStack(index: _currentIndex, children: _pages),
       ),
 
-      // ✅ 2. Floating Navbar (Material 3 Compliant)
+      // ✅ 2. Floating Navbar
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-
-        // Wrapped in Material for automatic M3 Elevation (Shadow/Tint)
         child: Material(
-          elevation: 12, // Higher elevation for clear separation
-          // ✅ Ensure shadow is visible in Dark Mode
+          elevation: 12,
           shadowColor: Colors.black.withOpacity(0.4),
-
           borderRadius: BorderRadius.circular(15),
 
-          // ✅ Use cardTheme color: Lighter than Scaffold in Dark Mode
-          color: theme.cardTheme.color,
+          // 🛑 COLOR LOGIC:
+          // Light Mode -> Black Bar (0xFF1E1E1E)
+          // Dark Mode -> White/Light Bar (0xFFF5F5F5)
+          color: isDark ? const Color(0xFFF5F5F5) : const Color(0xFF1E1E1E),
 
           child: Container(
             height: 70,
@@ -72,6 +71,7 @@ class _AdminShellState extends State<AdminShell> {
                   isSelected: _currentIndex == 0,
                   onTap: () => setState(() => _currentIndex = 0),
                   colorScheme: colorScheme,
+                  isDark: isDark,
                 ),
                 _NavBarItem(
                   asset: AppIcons.book,
@@ -79,6 +79,7 @@ class _AdminShellState extends State<AdminShell> {
                   isSelected: _currentIndex == 1,
                   onTap: () => setState(() => _currentIndex = 1),
                   colorScheme: colorScheme,
+                  isDark: isDark,
                 ),
                 _NavBarItem(
                   asset: AppIcons.user,
@@ -86,6 +87,7 @@ class _AdminShellState extends State<AdminShell> {
                   isSelected: _currentIndex == 2,
                   onTap: () => setState(() => _currentIndex = 2),
                   colorScheme: colorScheme,
+                  isDark: isDark,
                 ),
                 _NavBarItem(
                   asset: AppIcons.avatar,
@@ -93,6 +95,7 @@ class _AdminShellState extends State<AdminShell> {
                   isSelected: _currentIndex == 3,
                   onTap: () => setState(() => _currentIndex = 3),
                   colorScheme: colorScheme,
+                  isDark: isDark,
                 ),
               ],
             ),
@@ -110,6 +113,7 @@ class _NavBarItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final ColorScheme colorScheme;
+  final bool isDark; // ✅ Added to handle icon colors
 
   const _NavBarItem({
     required this.asset,
@@ -117,6 +121,7 @@ class _NavBarItem extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.colorScheme,
+    required this.isDark,
   });
 
   @override
@@ -132,7 +137,6 @@ class _NavBarItem extends StatelessWidget {
           vertical: 12,
         ),
         decoration: BoxDecoration(
-          // Active: Primary Blue background (light opacity). Inactive: Transparent
           color: isSelected
               ? colorScheme.primary.withOpacity(0.1)
               : Colors.transparent,
@@ -145,10 +149,15 @@ class _NavBarItem extends StatelessWidget {
             AppSvgIcon(
               asset: asset,
               size: 24,
-              // Active: Primary Color. Inactive: Muted Grey
+              // 🛑 ICON COLOR LOGIC:
+              // Selected -> Primary
+              // Unselected (Light Mode/Black Bar) -> Light Grey (0xFFB0B0B0)
+              // Unselected (Dark Mode/White Bar) -> Dark Grey (0xFF1E1E1E)
               color: isSelected
                   ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant.withOpacity(0.6),
+                  : (isDark
+                        ? const Color(0xFF1E1E1E)
+                        : const Color(0xFFB0B0B0)),
             ),
 
             // Label (Visible only when selected)
